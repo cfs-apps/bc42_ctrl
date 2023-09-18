@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2022 bitValence, Inc.
+    All Rights Reserved.
+
+    This program is free software; you can modify and/or redistribute it
+    under the terms of the GNU Affero General Public License
+    as published by the Free Software Foundation; version 3 with
+    attribution addendums as found in the LICENSE.txt.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+      
+    Purpose: 
+      This defines interfaces for the 42 Controller app 
+
+    Notes:
+      1. This document adheres to the Electronic Data Sheet (EDS) XML schema 
+         as prescribed in CCSDS book 876.0. 
+      
+-->
+<PackageFile xmlns="http://www.ccsds.org/schema/sois/seds">
+  <Package name="BC42_CTRL" shortDescription="Basecamp 42 controller application">
+    <DataTypeSet>
+
+      <!--***********************************-->
+      <!--**** DataTypeSet:  Entry Types ****-->
+      <!--***********************************-->
+
+      <!-- TODO: Decide if like: When enum used as array indice start values at zero and end with a "COUNT" entry -->
+      <EnumeratedDataType name="Bool42Id" shortDescription="Identifers for 42 booleans whose simulated value can be overridden. Enumeration values used as array indices so start at 0" >
+        <IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+        <EnumerationList>
+          <Enumeration label="Sun_VALID" value="0" shortDescription="" />
+          <Enumeration label="COUNT"     value="1" shortDescription="" />
+        </EnumerationList>
+      </EnumeratedDataType>
+      
+      <EnumeratedDataType name="Bool42State" shortDescription="" >
+        <IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+        <EnumerationList>
+          <Enumeration label="USE_SIM" value="0" shortDescription="Use 42's boolan state" />
+          <Enumeration label="TRUE"    value="1" shortDescription="Override to a TRUE value" />
+          <Enumeration label="FALSE"   value="2" shortDescription="Override to a FALSE value" />
+          <Enumeration label="COUNT"   value="3" shortDescription="" />
+        </EnumerationList>
+      </EnumeratedDataType>
+
+      <EnumeratedDataType name="ControlMode" shortDescription="This is a prootype and control modes have not been defined" >
+        <IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+        <EnumerationList>
+          <Enumeration label="MODE_1" value="0" shortDescription="Mode stub" />
+          <Enumeration label="MODE_2" value="1" shortDescription="Mode stub" />
+          <Enumeration label="MODE_3" value="2" shortDescription="Mode stub" />
+          <Enumeration label="COUNT"  value="3" shortDescription="" />
+        </EnumerationList>
+      </EnumeratedDataType>
+ 
+      <EnumeratedDataType name="TblId" shortDescription="Identifies different app tables" >
+        <IntegerDataEncoding sizeInBits="8" encoding="unsigned" />
+        <EnumerationList>
+          <Enumeration label="CONTROLLER" value="0" shortDescription="Controller parameters" />
+          <Enumeration label="COUNT"      value="1" shortDescription="" />
+        </EnumerationList>
+      </EnumeratedDataType>
+      
+      <!-- Move to app_c_fw -->
+      <ArrayDataType name="Vec3F" dataTypeRef="BASE_TYPES/float">
+        <DimensionList>
+           <Dimension size="3"/>
+        </DimensionList>
+      </ArrayDataType>
+
+      <ArrayDataType name="Vec3D" dataTypeRef="BASE_TYPES/double">
+        <DimensionList>
+           <Dimension size="3"/>
+        </DimensionList>
+      </ArrayDataType>
+
+      <ArrayDataType name="Vec4F" dataTypeRef="BASE_TYPES/float">
+        <DimensionList>
+           <Dimension size="4"/>
+        </DimensionList>
+      </ArrayDataType>
+
+      <ArrayDataType name="Vec4D" dataTypeRef="BASE_TYPES/double">
+        <DimensionList>
+           <Dimension size="4"/>
+        </DimensionList>
+      </ArrayDataType>
+      
+      <StringDataType name="char_x_16" length="16" />
+      
+      <!--***************************************-->
+      <!--**** DataTypeSet: Command Payloads ****-->
+      <!--***************************************-->
+
+      <ContainerDataType name="SetCtrlModeCmd_Payload" shortDescription="">
+        <EntryList>
+          <Entry name="NewMode"   type="ControlMode" shortDescription="" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="SetBoolOvrStateCmd_Payload" shortDescription="">
+        <EntryList>
+          <Entry name="Id"    type="Bool42Id"     shortDescription="" />
+          <Entry name="State" type="Bool42State"  shortDescription="" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="SetWheelTargetMomCmd_Payload" shortDescription="">
+        <EntryList>
+          <Entry name="Wheel" type="Vec4F"     shortDescription="" />
+        </EntryList>
+      </ContainerDataType>      
+
+      <!--*****************************************-->
+      <!--**** DataTypeSet: Telemetry Payloads ****-->
+      <!--*****************************************-->
+
+      <ContainerDataType name="StatusTlm_Payload" shortDescription="App's state and status summary">
+        <EntryList>
+          <Entry name="ValidCmdCnt"         type="BASE_TYPES/uint16" />
+          <Entry name="InvalidCmdCnt"       type="BASE_TYPES/uint16" />          
+          <Entry name="LastTblAction"       type="APP_C_FW/TblActions" />
+          <Entry name="LastTblActionStatus" type="APP_C_FW/TblActionStatus" />
+          <Entry name="ControlExecutionCnt" type="BASE_TYPES/uint32" />
+          <Entry name="ControlMode"         type="ControlMode" />
+          <Entry name="OverrideSunValid"    type="APP_C_FW/BooleanUint8" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="ControllerTlm_Payload" shortDescription="">
+        <EntryList>
+          <Entry name="wbn"       type="Vec3D"                  shortDescription="" />
+          <Entry name="wln"       type="Vec3D"                  shortDescription="" />
+          <Entry name="qbr"       type="Vec4D"                  shortDescription="" />
+          <Entry name="therr"     type="Vec3D"                  shortDescription="" />
+          <Entry name="werr"      type="Vec3D"                  shortDescription="" />
+          <Entry name="Hvb"       type="Vec3D"                  shortDescription="" />
+          <Entry name="svb"       type="Vec3D"                  shortDescription="" />
+          <Entry name="Tcmd"      type="Vec3D"                  shortDescription="Torque Command" />
+          <Entry name="Mcmd"      type="Vec3D"                  shortDescription="Magentic Command" />
+          <Entry name="SaGcmd"    type="BASE_TYPES/double"      shortDescription="" />
+          <Entry name="GpsValid"  type="APP_C_FW/BooleanUint8"  shortDescription="" />
+          <Entry name="StValid"   type="APP_C_FW/BooleanUint8"  shortDescription="" />
+          <Entry name="SunValid"  type="APP_C_FW/BooleanUint8"  shortDescription="" />
+          <Entry name="TakeSci"   type="APP_C_FW/BooleanUint8"  shortDescription="" />          
+       </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="ControlGainsTlm_Payload" shortDescription="Controller gains">
+        <EntryList>
+          <Entry name="Kp"    type="Vec3F"             shortDescription="" />
+          <Entry name="Kr"    type="Vec3F"             shortDescription="" />
+          <Entry name="Kunl"  type="BASE_TYPES/float"  shortDescription="" />
+       </EntryList>
+      </ContainerDataType>
+
+
+      <!--**************************************-->
+      <!--**** DataTypeSet: Command Packets ****-->
+      <!--**************************************-->
+
+      <ContainerDataType name="CommandBase" baseType="CFE_HDR/CommandHeader">
+      </ContainerDataType>
+
+      <ContainerDataType name="NoopCmd" baseType="CommandBase" shortDescription="Generate an info event message with app version">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/NOOP_CC}" />
+        </ConstraintSet>
+      </ContainerDataType>
+
+      <ContainerDataType name="ResetCmd" baseType="CommandBase" shortDescription="Reset app to a known state">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/RESET_CC}" />
+        </ConstraintSet>
+      </ContainerDataType>
+
+      <ContainerDataType name="LoadTbl" baseType="CommandBase">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/LOAD_TBL_CC}" />
+        </ConstraintSet>
+        <EntryList>
+          <Entry type="LoadTbl_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="DumpTbl" baseType="CommandBase">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/DUMP_TBL_CC}" />
+        </ConstraintSet>
+        <EntryList>
+          <Entry type="DumpTbl_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="SendCtrlGainsTlmCmd" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 0" />
+        </ConstraintSet>
+      </ContainerDataType>
+
+      <ContainerDataType name="SetCtrlModeCmd" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 1" />
+        </ConstraintSet>
+        <EntryList>
+          <Entry type="SetCtrlModeCmd_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="SetBoolOvrStateCmd" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 2" />
+        </ConstraintSet>
+        <EntryList>
+          <Entry type="SetBoolOvrStateCmd_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="SetWheelTargetMomCmd" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 3" />
+        </ConstraintSet>
+        <EntryList>
+          <Entry type="SetWheelTargetMomCmd_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="EnableDebugLogCmd" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 4" />
+        </ConstraintSet>
+      </ContainerDataType>
+
+      <ContainerDataType name="DisableDebugLogCmd" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 5" />
+        </ConstraintSet>
+      </ContainerDataType>
+
+
+      <!--****************************************-->
+      <!--**** DataTypeSet: Telemetry Packets ****-->
+      <!--****************************************-->
+
+      <ContainerDataType name="StatusTlm" baseType="CFE_HDR/TelemetryHeader">
+        <EntryList>
+          <Entry type="StatusTlm_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+     
+      <ContainerDataType name="ControllerTlm" baseType="CFE_HDR/TelemetryHeader">
+        <EntryList>
+          <Entry type="ControllerTlm_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+      <ContainerDataType name="ControlGainsTlm" baseType="CFE_HDR/TelemetryHeader">
+        <EntryList>
+          <Entry type="ControlGainsTlm_Payload" name="Payload" />
+        </EntryList>
+      </ContainerDataType>
+
+    </DataTypeSet>
+    
+    <ComponentSet>
+      <Component name="Application">
+
+        <!--***********************************-->
+        <!--**** Component Set: Interfaces ****-->
+        <!--***********************************-->
+      
+        <RequiredInterfaceSet>
+        
+          <Interface name="CMD" shortDescription="Software bus telecommand interface" type="CFE_SB/Telecommand">
+            <GenericTypeMapSet>
+              <GenericTypeMap name="TelecommandDataType" type="CommandBase" />
+            </GenericTypeMapSet>
+          </Interface>
+          
+          <Interface name="STATUS_TLM" shortDescription="Software bus status telemetry interface" type="CFE_SB/Telemetry">
+            <GenericTypeMapSet>
+              <GenericTypeMap name="TelemetryDataType" type="StatusTlm" />
+            </GenericTypeMapSet>
+          </Interface>
+          
+          <Interface name="CONTROLLER_TLM" shortDescription="" type="CFE_SB/Telemetry">
+            <GenericTypeMapSet>
+              <GenericTypeMap name="TelemetryDataType" type="ControllerTlm" />
+            </GenericTypeMapSet>
+          </Interface>
+        
+          <Interface name="CONTROL_GAINS_TLM" shortDescription="" type="CFE_SB/Telemetry">
+            <GenericTypeMapSet>
+              <GenericTypeMap name="TelemetryDataType" type="ControlGainsTlm" />
+            </GenericTypeMapSet>
+          </Interface>
+        
+        </RequiredInterfaceSet>
+ 
+        <!--***************************************-->
+        <!--**** Component Set: Implementation ****-->
+        <!--***************************************-->
+
+        <Implementation>
+          <VariableSet>
+            <Variable type="BASE_TYPES/uint16" readOnly="true" name="CmdTopicId"             initialValue="${CFE_MISSION/BC42_CTRL_CMD_TOPICID}" />
+            <Variable type="BASE_TYPES/uint16" readOnly="true" name="StatusTlmTopicId"       initialValue="${CFE_MISSION/BC42_CTRL_STATUS_TLM_TOPICID}" />
+            <Variable type="BASE_TYPES/uint16" readOnly="true" name="ControllerTlmTopicId"   initialValue="${CFE_MISSION/BC42_CTRL_CONTROLLER_TLM_TOPICID}" />
+            <Variable type="BASE_TYPES/uint16" readOnly="true" name="ControlGainsTlmTopicId" initialValue="${CFE_MISSION/BC42_CTRL_CONTROL_GAINS_TLM_TOPICID}" />
+          </VariableSet>
+          <!-- Assign fixed numbers to the "TopicId" parameter of each interface -->
+          <ParameterMapSet>          
+            <ParameterMap interface="CMD"               parameter="TopicId" variableRef="CmdTopicId" />
+            <ParameterMap interface="STATUS_TLM"        parameter="TopicId" variableRef="StatusTlmTopicId" />
+            <ParameterMap interface="CONTROLLER_TLM"    parameter="TopicId" variableRef="ControllerTlmTopicId" />
+            <ParameterMap interface="CONTROL_GAINS_TLM" parameter="TopicId" variableRef="ControlGainsTlmTopicId" />
+          </ParameterMapSet>
+        </Implementation>
+      </Component>
+    </ComponentSet>
+    
+  </Package>
+</PackageFile>
