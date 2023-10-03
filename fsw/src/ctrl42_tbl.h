@@ -13,21 +13,16 @@
 **  GNU Affero General Public License for more details.
 **
 **  Purpose:
-**    Manage the Histogram defintion table
+**    Manage the Controller parameter table
 **
 **  Notes:
 **    1. Use the Singleton design pattern. A pointer to the table object
 **       is passed to the constructor and saved for all other operations.
 **       This is a table-specific file so it doesn't need to be re-entrant.
 **
-**  References:
-**    1. OpenSatKit Object-based Application Developer's Guide
-**    2. cFS Application Developer's Guide
-**
 */
-
-#ifndef _histogram_tbl_
-#define _histogram_tbl_
+#ifndef _ctrl42_tbl_
+#define _ctrl42_tbl_
 
 /*
 ** Includes
@@ -43,8 +38,8 @@
 ** Event Message IDs
 */
 
-#define HISTOGRAM_TBL_DUMP_EID  (HISTOGRAM_TBL_BASE_EID + 0)
-#define HISTOGRAM_TBL_LOAD_EID  (HISTOGRAM_TBL_BASE_EID + 1)
+#define CTRL42_TBL_DUMP_EID  (CTRL42_TBL_BASE_EID + 0)
+#define CTRL42_TBL_LOAD_EID  (CTRL42_TBL_BASE_EID + 1)
 
 
 /**********************/
@@ -54,7 +49,7 @@
 /*
 ** Table load callback function
 */
-typedef void (*HISTOGRAM_TBL_LoadFunc_t)(void);
+typedef void (*CTRL42_TBL_LoadFunc_t)(void);
 
 
 /******************************************************************************
@@ -65,19 +60,20 @@ typedef void (*HISTOGRAM_TBL_LoadFunc_t)(void);
 typedef struct
 {
 
-   uint16  LoLim;
-   uint16  HiLim;
-
-} HISTOGRAM_TBL_Bin_t;
-
+   float  Lower;
+   float  Upper;
+   
+} CTRL42_TBL_Lim_t;
 
 typedef struct
 {
-
-   uint16               BinCnt;
-   HISTOGRAM_TBL_Bin_t  Bin[HISTOGRAM_MAX_BINS];
+   float  Kp[3];
+   float  Kr[3];
+   float  Kunl;
+   float  SciThetaLim[3];
+   CTRL42_TBL_Lim_t HcmdLim;
    
-} HISTOGRAM_TBL_Data_t;
+} CTRL42_TBL_Data_t;
 
 
 /******************************************************************************
@@ -91,8 +87,8 @@ typedef struct
    ** Table Data
    */
    
-   HISTOGRAM_TBL_Data_t     Data;
-   HISTOGRAM_TBL_LoadFunc_t LoadFunc; 
+   CTRL42_TBL_Data_t     Data;
+   CTRL42_TBL_LoadFunc_t LoadFunc; 
    
    /*
    ** Standard CJSON table data
@@ -104,10 +100,10 @@ typedef struct
    uint16       LastLoadCnt;
    
    size_t       JsonObjCnt;
-   char         JsonBuf[HISTOGRAM_TBL_JSON_FILE_MAX_CHAR];   
+   char         JsonBuf[CTRL42_TBL_JSON_FILE_MAX_CHAR];   
    size_t       JsonFileLen;
    
-} HISTOGRAM_TBL_Class_t;
+} CTRL42_TBL_Class_t;
 
 
 /************************/
@@ -116,7 +112,7 @@ typedef struct
 
 
 /******************************************************************************
-** Function: HISTOGRAM_TBL_Constructor
+** Function: CTRL42_TBL_Constructor
 **
 ** Initialize the Histogram table object.
 **
@@ -125,13 +121,13 @@ typedef struct
 **      registered with the table manager.
 **
 */
-void HISTOGRAM_TBL_Constructor(HISTOGRAM_TBL_Class_t *TblObj, 
-                               HISTOGRAM_TBL_LoadFunc_t LoadFunc,
-                               const char *AppName);
+void CTRL42_TBL_Constructor(CTRL42_TBL_Class_t *TblObj, 
+                            CTRL42_TBL_LoadFunc_t LoadFunc,
+                            const char *AppName);
 
 
 /******************************************************************************
-** Function: HISTOGRAM_TBL_DumpCmd
+** Function: CTRL42_TBL_DumpCmd
 **
 ** Command to write the table data from memory to a JSON file.
 **
@@ -141,11 +137,11 @@ void HISTOGRAM_TBL_Constructor(HISTOGRAM_TBL_Class_t *TblObj,
 **     the app framework table manager.
 **
 */
-bool HISTOGRAM_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filename);
+bool CTRL42_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filename);
 
 
 /******************************************************************************
-** Function: HISTOGRAM_TBL_LoadCmd
+** Function: CTRL42_TBL_LoadCmd
 **
 ** Command to copy the table data from a JSON file to memory.
 **
@@ -155,19 +151,19 @@ bool HISTOGRAM_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filena
 **     the app framework table manager.
 **
 */
-bool HISTOGRAM_TBL_LoadCmd(TBLMGR_Tbl_t *Tbl, uint8 LoadType, const char *Filename);
+bool CTRL42_TBL_LoadCmd(TBLMGR_Tbl_t *Tbl, uint8 LoadType, const char *Filename);
 
 
 /******************************************************************************
-** Function: HISTOGRAM_TBL_ResetStatus
+** Function: CTRL42_TBL_ResetStatus
 **
 ** Reset counters and status flags to a known reset state.  The behavior of
 ** the table manager should not be impacted. The intent is to clear counters
 ** and flags to a known default state for telemetry.
 **
 */
-void HISTOGRAM_TBL_ResetStatus(void);
+void CTRL42_TBL_ResetStatus(void);
 
 
-#endif /* _histogram_tbl_ */
+#endif /* _ctrl42_tbl_ */
 

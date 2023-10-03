@@ -39,10 +39,10 @@
 ** Events Message IDs
 */
 
-#define BC42_CTRL_INIT_APP_EID      (BC42_CTRL_BASE_EID + 0)
-#define BC42_CTRL_EXIT_EID          (BC42_CTRL_BASE_EID + 1)
-#define BC42_CTRL_NOOP_EID          (BC42_CTRL_BASE_EID + 2)
-#define BC42_CTRL_INVALID_MID_EID   (BC42_CTRL_BASE_EID + 3)
+#define BC42_CTRL_INIT_APP_EID          (BC42_CTRL_BASE_EID + 0)
+#define BC42_CTRL_EXIT_EID              (BC42_CTRL_BASE_EID + 1)
+#define BC42_CTRL_NOOP_EID              (BC42_CTRL_BASE_EID + 2)
+#define BC42_CTRL_PROCESS_CMD_PIPE_EID  (BC42_CTRL_BASE_EID + 3)
 
 
 /**********************/
@@ -82,7 +82,8 @@ typedef struct
 
    uint32          PerfId;
    CFE_SB_MsgId_t  CmdMid;
-   CFE_SB_MsgId_t  SendStatusTlmMid;
+   CFE_SB_MsgId_t  ExecuteMid;
+   CFE_SB_MsgId_t  StatusTlmMid;
    CFE_SB_MsgId_t  SensorDataMsgMid;
    
    /*

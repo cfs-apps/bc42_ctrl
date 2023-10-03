@@ -19,7 +19,7 @@
    "hcmd-lim": {
       "lower": -0.9,
       "upper":  0.9
-   }
+   },
    "sci-theta-lim": {
       "x": 0.0005,
       "y": 0.0005,

@@ -8,22 +8,23 @@
       "APP_PERF_ID":  127,
       "APP_CMD_PIPE_NAME":  "BC42_CTRL_CMD",
       "APP_CMD_PIPE_DEPTH": 25,
-      "APP_DEBUG_FILE":  "/cf/bc42_ctrl_debug.txt"
 
-      "BC42_CTRL_CMD_TOPICID": 0,
-      "BC42_CTRL_STATUS_TLM_TOPICID": 0,
-      "BC42_INTF_SENSOR_DATA_MSG_TOPICID": 0,
+      "BC42_CTRL_CMD_TOPICID": 6248,
+      "BC42_CTRL_STATUS_TLM_TOPICID": 2166,
+      "BC42_CTRL_CONTROLLER_TLM_TOPICID": 2167,
+      "BC42_CTRL_CONTROL_GAINS_TLM_TOPICID": 2168,
+      "BC42_INTF_SENSOR_DATA_MSG_TOPICID": 2164,
       "BC42_INTF_SENSOR_DATA_MSG_TIMEOUT": 1500,
-      "BC_SCH_1_HZ_TOPICID": 0,
+      "BC42_INTF_ACTUATOR_CMD_MSG_TOPICID": 2164,
+      "BC_SCH_1_HZ_TOPICID": 6224,
 
       "CTRL42_TAKE_SCI_INIT_CYC":  30,
       "CTRL42_TAKE_SCI_TRANS_CYC":  4,
 
-      "CRTL42_DEBUG_FILE": "/cf/bc42_ctrl_debug.txt"
+      "CTRL42_DEBUG_FILE": "/cf/bc42_ctrl_debug.txt",
 
-
-      "CRTL42_TBL_LOAD_FILE": "/cf/bc42_ctrl_tbl.json",
-      "CRTL42_TBL_DUMP_FILE": "/cf/bc42_ctrl_tbl~.json"
+      "CTRL42_TBL_LOAD_FILE": "/cf/bc42_ctrl_prm.json",
+      "CTRL42_TBL_DUMP_FILE": "/cf/bc42_ctrl_prm~.json"
    }
 
 }

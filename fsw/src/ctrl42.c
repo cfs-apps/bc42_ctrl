@@ -60,11 +60,11 @@ static CTRL42_Class_t *Ctrl42 = NULL;
 /** Local Function Prototypes **/
 /*******************************/
 
-static void  AcStructToTlm(void);
-static void  SensorDataMsgToAcStruct(const BC42_INTF_SensorDataMsg_t *SensorDataMsg);
-static void  SetTakeSci(void);
-static void  TblToAcStruct(void);
-static char  *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State);
+static void AcceptNewTbl(void);
+static void SendAcStructTlm(void);
+static void SensorDataMsgToAcStruct(const BC42_INTF_SensorDataMsg_t *SensorDataMsg);
+static void SetTakeSci(void);
+static const char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State);
 
 
 /******************************************************************************
@@ -77,7 +77,8 @@ static char  *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State);
 **   2. Assumes IF42 has constructed osk_42_lib's AC42 shared data structure 
 **
 */
-void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl)
+void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl,
+                        TBLMGR_Class_t *TblMgr)
 {
 
    int i;
@@ -88,34 +89,37 @@ void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl)
    CFE_PSP_MemSet((void*)Ctrl42, 0, sizeof(CTRL42_Class_t));
    
    /* Down counters */
-   Ctrl42->TakeSciInitCyc  = INITBL_GetIntConfig(INITBL_OBJ, CFG_CTRL42_TAKE_SCI_INIT_CYC);
-   Ctrl42->TakeSciTransCyc = INITBL_GetIntConfig(INITBL_OBJ, CFG_CTRL42_TAKE_SCI_TRANS_CYC);
+   Ctrl42->TakeSciInitCyc  = INITBL_GetIntConfig(IniTbl, CFG_CTRL42_TAKE_SCI_INIT_CYC);
+   Ctrl42->TakeSciTransCyc = INITBL_GetIntConfig(IniTbl, CFG_CTRL42_TAKE_SCI_TRANS_CYC);
    
    for (i=BC42_CTRL_Bool42State_Enum_t_MIN; i<=BC42_CTRL_Bool42State_Enum_t_MAX; i++)
    {
       Ctrl42->BoolOverride[i] = BC42_CTRL_Bool42State_USE_SIM;
    }
    
-   strncpy (Ctrl42->Filename, INITBL_GetStrConfig(INITBL_OBJ, CFG_CRTL42_DEBUG_FILE),OS_MAX_PATH_LEN);
-   Ctrl42->Filename[OS_MAX_PATH_LEN-1] = '\0';
+   strncpy (Ctrl42->DebugFilename, INITBL_GetStrConfig(IniTbl, CFG_CTRL42_DEBUG_FILE),OS_MAX_PATH_LEN);
+   Ctrl42->DebugFilename[OS_MAX_PATH_LEN-1] = '\0';
    
-   CTRL42_TBL_Constructor(&(Ctrl42->CtrlTbl), AcceptNewTbl, INITBL_GetStrConfig(IniTbl, CFG_APP_CFE_NAME));
+   CTRL42_TBL_Constructor(&(Ctrl42->Tbl), AcceptNewTbl, INITBL_GetStrConfig(IniTbl, CFG_APP_CFE_NAME));
+   TBLMGR_RegisterTblWithDef(TblMgr, CTRL42_TBL_LoadCmd, CTRL42_TBL_DumpCmd,  
+                             INITBL_GetStrConfig(IniTbl, CFG_CTRL42_TBL_LOAD_FILE));
 
    CFE_MSG_Init(CFE_MSG_PTR(Ctrl42->ActuatorCmdMsg.TelemetryHeader), 
-                CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_STATUS_TLM_TOPICID)),
+                CFE_SB_ValueToMsgId(INITBL_GetIntConfig(IniTbl, CFG_BC42_INTF_ACTUATOR_CMD_MSG_TOPICID)),
                 sizeof(BC42_INTF_ActuatorCmdMsg_t));
 
    CFE_MSG_Init(CFE_MSG_PTR(Ctrl42->ControllerTlm.TelemetryHeader), 
-                CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_CONTROLLER_TLM_TOPICID)),
+                CFE_SB_ValueToMsgId(INITBL_GetIntConfig(IniTbl, CFG_BC42_CTRL_CONTROLLER_TLM_TOPICID)),
                 sizeof(BC42_CTRL_ControllerTlm_t));
                 
    CFE_MSG_Init(CFE_MSG_PTR(Ctrl42->ControlGainsTlm.TelemetryHeader), 
-                CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_CONTROL_GAINS_TLM_TOPICID)),
+                CFE_SB_ValueToMsgId(INITBL_GetIntConfig(IniTbl, CFG_BC42_CTRL_CONTROL_GAINS_TLM_TOPICID)),
                 sizeof(BC42_CTRL_ControlGainsTlm_t));
-                
+                                
+                             
 } /* End CTRL42_Constructor() */
 
-o
+
 /******************************************************************************
 ** Function: CTRL42_DisableDebugLogCmd
 **
@@ -127,14 +131,14 @@ bool CTRL42_DisableDebugLogCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
 
    if (Ctrl42->DebugEnabled)
    {
-      Ctrl42->Ctrl42->DebugEnabled = false;
+      Ctrl42->DebugEnabled = false;
       OS_close(Ctrl42->DebugFileHandle);
-      CFE_EVS_SendEvent(CTRL42_DEBUG_CMD_EID, CFE_EVS_EventType_INFORMATION,
-                        "Debug log file %s closed", Ctrl42->Filename);
+      CFE_EVS_SendEvent(CTRL42_DIS_DEBUG_CMD_EID, CFE_EVS_EventType_INFORMATION,
+                        "Debug log file %s closed", Ctrl42->DebugFilename);
    }
    else
    {
-      CFE_EVS_SendEvent(CTRL42_DEBUG_CMD_EID, CFE_EVS_EventType_INFORMATION,
+      CFE_EVS_SendEvent(CTRL42_DIS_DEBUG_CMD_EID, CFE_EVS_EventType_INFORMATION,
                         "Disable debug command had no effect, debug log not currently enabled.");
    }
               
@@ -157,7 +161,7 @@ bool CTRL42_EnableDebugLogCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 
    if (Ctrl42->DebugEnabled == true)
    {
-      CFE_EVS_SendEvent(CTRL42_DEBUG_CMD_ERR_EID, CFE_EVS_EventType_ERROR, 
+      CFE_EVS_SendEvent(CTRL42_ENA_DEBUG_CMD_EID, CFE_EVS_EventType_ERROR, 
                         "Enable debug command had no effect, debug log already enabled");
    }
    else
@@ -169,14 +173,14 @@ bool CTRL42_EnableDebugLogCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
       if (SysStatus == OS_SUCCESS)
       {   
          Ctrl42->DebugEnabled = true;
-         CFE_EVS_SendEvent(CTRL42_DEBUG_CMD_EID, CFE_EVS_EventType_INFORMATION,
+         CFE_EVS_SendEvent(CTRL42_ENA_DEBUG_CMD_EID, CFE_EVS_EventType_INFORMATION,
                            "Created debug log file %s",Ctrl42->DebugFilename);
          RetStatus = true;
       }
       else 
       {
          OS_GetErrorName(SysStatus, &OsErrStr);
-         CFE_EVS_SendEvent(CTRL42_DEBUG_CMD_ERR_EID, CFE_EVS_EventType_ERROR, 
+         CFE_EVS_SendEvent(CTRL42_ENA_DEBUG_CMD_EID, CFE_EVS_EventType_ERROR, 
          "Error creating debug log file %s. Status = %s", Ctrl42->DebugFilename, OsErrStr);
       
       } /* End if error creating file */
@@ -211,13 +215,13 @@ void CTRL42_ResetStatus(void)
 void CTRL42_Run42Fsw(BC42_INTF_SensorDataMsg_t *SensorDataMsg)
 {
 
-   CFE_EVS_SendEvent(CTRL42_DEBUG_EID, CFE_EVS_EventType_DEBUG,
+   CFE_EVS_SendEvent(CTRL42_DEBUG_CONTROLLER_EID, CFE_EVS_EventType_DEBUG,
                      "**** CTRL42_Run42Fsw(%d) ****", (int)Ctrl42->CtrlExeCnt);
     
    Ctrl42->Bc42 = BC42_TakePtr();
    AC42_(EchoEnabled) = false;
    
-   SensorPktToAcStruct(SensorDataMsg);
+   SensorDataMsgToAcStruct(SensorDataMsg);
 
    if (SensorDataMsg->Payload.InitCycle == true)
    {
@@ -229,10 +233,10 @@ void CTRL42_Run42Fsw(BC42_INTF_SensorDataMsg_t *SensorDataMsg)
    AcFsw(AC42);
    ++Ctrl42->CtrlExeCnt;
 
-   AcStructToTlm();
+   SendAcStructTlm();
    SetTakeSci();
 
-   AC42_ReleasePtr(Ctrl42->Bc42);
+   BC42_GivePtr(Ctrl42->Bc42);
 
 } /* End CTRL42_Run42Fsw() */
 
@@ -250,17 +254,17 @@ bool CTRL42_SendCtrlGainsTlmCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPt
    
    BC42_CTRL_ControlGainsTlm_Payload_t *TlmPayload = &Ctrl42->ControlGainsTlm.Payload;
 
-   TlmPayload->Kp[0] = Ctrl42->CtrlTbl.Data.Kp.X;
-   TlmPayload->Kp[1] = Ctrl42->CtrlTbl.Data.Kp.Y;
-   TlmPayload->Kp[2] = Ctrl42->CtrlTbl.Data.Kp.Z;
+   TlmPayload->Kp[0] = Ctrl42->Tbl.Data.Kp[0];
+   TlmPayload->Kp[1] = Ctrl42->Tbl.Data.Kp[1];
+   TlmPayload->Kp[2] = Ctrl42->Tbl.Data.Kp[2];
    
-   TlmPayload->Kr[0] = Ctrl42->CtrlTbl.Data.Kr.X;
-   TlmPayload->Kr[1] = Ctrl42->CtrlTbl.Data.Kr.Y;
-   TlmPayload->Kr[2] = Ctrl42->CtrlTbl.Data.Kr.Z;
+   TlmPayload->Kr[0] = Ctrl42->Tbl.Data.Kr[0];
+   TlmPayload->Kr[1] = Ctrl42->Tbl.Data.Kr[1];
+   TlmPayload->Kr[2] = Ctrl42->Tbl.Data.Kr[2];
 
-   TlmPayload->Kunl  = Ctrl42->CtrlTbl.Data.Kunl;
+   TlmPayload->Kunl  = Ctrl42->Tbl.Data.Kunl;
    
-   Ctrl42->Ac42 = BC42_TakePtr();
+   Ctrl42->Bc42 = BC42_TakePtr();
    
    TlmPayload->Kp[0] = AC42_(CfsCtrl.Kp[0]);
    TlmPayload->Kp[1] = AC42_(CfsCtrl.Kp[1]);
@@ -272,10 +276,10 @@ bool CTRL42_SendCtrlGainsTlmCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPt
 
    TlmPayload->Kunl  = AC42_(CfsCtrl.Kunl);
    
-   BC42_GivePtr(Ctrl42->Ac42);
+   BC42_GivePtr(Ctrl42->Bc42);
 
    CFE_SB_TimeStampMsg(CFE_MSG_PTR(Ctrl42->ControlGainsTlm.TelemetryHeader));
-   CFE_SB_TransmitMsg(CFE_MSG_PTR(Ctrl42->ControlGainsTlm.TelemetryHeader), true);
+   CfeStatus = CFE_SB_TransmitMsg(CFE_MSG_PTR(Ctrl42->ControlGainsTlm.TelemetryHeader), true);
    
    return (CfeStatus == CFE_SUCCESS);
 
@@ -295,6 +299,7 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
 
    const BC42_CTRL_SetBoolOvrStateCmd_Payload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetBoolOvrStateCmd_t);
    bool  RetStatus = false;
+   int   i;
    
    for (i=BC42_CTRL_Bool42Id_Enum_t_MIN; i<BC42_CTRL_Bool42State_Enum_t_MAX; i++)
    {
@@ -309,14 +314,14 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
          Ctrl42->BoolOverride[CmdPayload->Id] = CmdPayload->State;
          RetStatus = true;
          CFE_EVS_SendEvent(CTRL42_SET_BOOL_OVR_EID, CFE_EVS_EventType_INFORMATION,
-                           "Set override identifier %d to state %s", CmdPayload->Id, OverrideStr(CmdPayload->State));
+                           "Set override identifier %d to state %s", CmdPayload->Id, BoolOverrideStr(CmdPayload->State));
          CFE_EVS_SendEvent(CTRL42_SET_BOOL_OVR_EID, CFE_EVS_EventType_INFORMATION,
-                           "**** Currently this command does not effect the 42 controller ported to this app ****"); 
+                           "Currently this command does not effect the 42 controller ported to this app"); 
 	  }
 	  else {
          CFE_EVS_SendEvent(CTRL42_SET_BOOL_OVR_EID, CFE_EVS_EventType_ERROR,
                            "Invalid commanded override state %d. Must be between %d and %d inclusively",\
-                           SetOvrCmd->State,BC42_CTRL_Bool42State_Enum_t_MIN,BC42_CTRL_Bool42State_Enum_t_MAX);
+                           CmdPayload->State,BC42_CTRL_Bool42State_Enum_t_MIN,BC42_CTRL_Bool42State_Enum_t_MAX);
 	  } /* End if valid state */
 	  
    } /* End if valid ID */
@@ -325,7 +330,7 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
    {
       CFE_EVS_SendEvent(CTRL42_SET_BOOL_OVR_EID, CFE_EVS_EventType_ERROR,
                         "Invalid commanded override identifier %d is greater than max ID %d",
-                        SetOvrCmd->Id, BC42_CTRL_Bool42Id_Enum_t_MAX); 
+                        CmdPayload->Id, BC42_CTRL_Bool42Id_Enum_t_MAX); 
    }
 
    return RetStatus;
@@ -366,33 +371,33 @@ bool CTRL42_SetWheelTargetMomCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgP
    bool   RetStatus = false;
    uint8  ValidWheels = 0, i;   
 
-   for (i=0; i<AC42_NWHL; i++)
+   for (i=0; i<BC42_NWHL; i++)
    {
    
-      if ( SetTargetWhlMomCmd->Whl[i] >= Ctrl42->CtrlTbl.Data.HcmdLim.Lower &&
-           SetTargetWhlMomCmd->Whl[i] <= Ctrl42->CtrlTbl.Data.HcmdLim.Upper ) {
-      
-         Ctrl42->Hcmd[i] = SetTargetWhlMomCmd->Whl[i];
+      if ( CmdPayload->Wheel[i] >= Ctrl42->Tbl.Data.HcmdLim.Lower &&
+           CmdPayload->Wheel[i] <= Ctrl42->Tbl.Data.HcmdLim.Upper )
+      {
+         Ctrl42->Hcmd[i] = CmdPayload->Wheel[i];
          ValidWheels++;
-      
       }
-      else {
-         
-         CFE_EVS_SendEvent(CTRL42_INVLD_TARGET_WHL_MOM_EID, CFE_EVS_EventType_ERROR,
+      else
+      {   
+         CFE_EVS_SendEvent(CTRL42_WHL_TARGET_MOM_CMD_EID, CFE_EVS_EventType_ERROR,
                            "Commanded target wheel %d momentum %0.6e exceeds (lower,upper) limits (%0.6e,%0.6e)",
-                           i, SetTargetWhlMomCmd->Whl[i], Ctrl42->CtrlTbl.Data.HcmdLim.Lower, Ctrl42->CtrlTbl.Data.HcmdLim.Upper);
+                           i, CmdPayload->Wheel[i], Ctrl42->Tbl.Data.HcmdLim.Lower, Ctrl42->Tbl.Data.HcmdLim.Upper);
       }
       
    } /* End wheel loop */ 
       
-   if (ValidWheels == AC42_NWHL) {
+   if (ValidWheels == BC42_NWHL)
+   {
       
-      CFE_EVS_SendEvent(CTRL42_SET_TARGET_WHL_MOM_EID, CFE_EVS_EventType_INFORMATION,
+      CFE_EVS_SendEvent(CTRL42_WHL_TARGET_MOM_CMD_EID, CFE_EVS_EventType_INFORMATION,
                         "Target wheel momentum set to %0.6e, %0.6e, %0.6e, %0.6e",
                         Ctrl42->Hcmd[0],Ctrl42->Hcmd[1],Ctrl42->Hcmd[2],Ctrl42->Hcmd[3]);
       
-      CFE_EVS_SendEvent(CTRL42_SET_TARGET_WHL_MOM_EID, CFE_EVS_EventType_INFORMATION,
-                        "**** OSK v2.3: This command has no effect with the current 42 standalone controller ****"); 
+      CFE_EVS_SendEvent(CTRL42_WHL_TARGET_MOM_CMD_EID, CFE_EVS_EventType_INFORMATION,
+                        "This command has no effect with the current 42 standalone controller"); 
 
       RetStatus = true;
       
@@ -428,21 +433,21 @@ static void AcceptNewTbl(void)
 ** TODO: Decide whether to define strings in EDS.
 **
 */
-static char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State)
+static const char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State)
 {
 
-   static char* OverrideStr[BC42_CTRL_Bool42State_COUNT+1] = 
+   const static char *OverrideStr[BC42_CTRL_Bool42State_COUNT+1] = 
    {
       "USE 42 SIM", "TRUE", "FALSE", "UNDEFINED"
    };
    
    if (State >= BC42_CTRL_Bool42State_Enum_t_MIN && State <= BC42_CTRL_Bool42State_Enum_t_MAX)
 
-      return Override[State];
+      return OverrideStr[State];
  
    else
 
-      return Override[BC42_CTRL_Bool42State_COUNT];
+      return OverrideStr[BC42_CTRL_Bool42State_COUNT];
  
 } /* End BoolOverrideStr() */
 
@@ -451,91 +456,92 @@ static char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State)
 ** Function:  SensorDataMsgToAcStruct
 **
 ** Notes:
-**   1. Assumes caller is performing AC42_GetPtr() and AC42_ReleasePtr() calls.
+**   1. Assumes caller is performing BC42_TakePtr() and BC42_GivePtr() calls.
 **
 */
 static void SensorDataMsgToAcStruct(const BC42_INTF_SensorDataMsg_t *SensorDataMsg) 
 {
    
    int i;
-   BC42_CTRL_ControlGainsTlm_Payload_t *TlmPayload = &Ctrl42->ControlGainsTlm.Payload;
-   AC42_(Time)         = SensorDataPkt->Time;
-   AC42_(GPS[0].Valid) = SensorDataPkt->GpsValid;
-   AC42_(StValid)      = SensorDataPkt->StValid;  
-   AC42_(SunValid)     = SensorDataPkt->SunValid;  /* CSS/FSS */
+   
+   AC42_(Time)         = SensorDataMsg->Payload.GpsTime;
+   AC42_(GPS[0].Valid) = SensorDataMsg->Payload.GpsValid;
+   AC42_(StValid)      = SensorDataMsg->Payload.StValid;  
+   AC42_(SunValid)     = SensorDataMsg->Payload.SunValid;  /* CSS/FSS */
 
    for (i=0; i < 3; i++) {
 
-      AC42_(PosN[i])  = SensorDataPkt->PosN[i];  /* GPS */
-      AC42_(VelN[i])  = SensorDataPkt->VelN[i];
+      AC42_(PosN[i])  = SensorDataMsg->Payload.PosN[i];  /* GPS */
+      AC42_(VelN[i])  = SensorDataMsg->Payload.VelN[i];
    
-      AC42_(qbn[i])   = SensorDataPkt->qbn[i];   /* ST */
+      AC42_(qbn[i])   = SensorDataMsg->Payload.qbn[i];   /* ST */
 
-      AC42_(wbn[i])   = SensorDataPkt->wbn[i];   /* Gyro */
+      AC42_(wbn[i])   = SensorDataMsg->Payload.wbn[i];   /* Gyro */
    
-      AC42_(svb[i])   = SensorDataPkt->svb[i];   /* CSS/FSS */
+      AC42_(svb[i])   = SensorDataMsg->Payload.svb[i];   /* CSS/FSS */
 
-      AC42_(bvb[i])   = SensorDataPkt->bvb[i];   /* MTB s*/
+      AC42_(bvb[i])   = SensorDataMsg->Payload.bvb[i];   /* MTB s*/
 
-      AC42_(Whl[i].H) = SensorDataPkt->WhlH[i];  /* Wheels */
+      AC42_(Whl[i].H) = SensorDataMsg->Payload.WhlH[i];  /* Wheels */
 
    }
    
-   AC42_(qbn[3])   = SensorDataPkt->qbn[3];   /* ST */
-   AC42_(Whl[3].H) = SensorDataPkt->WhlH[4];  /* Wheels */
+   AC42_(qbn[3])   = SensorDataMsg->Payload.qbn[3];   /* ST */
+   AC42_(Whl[3].H) = SensorDataMsg->Payload.WhlH[4];  /* Wheels */
 
 } /* End SensorDataMsgToAcStruct() */
 
 
 /******************************************************************************
-** Function: AcStructToTlm
+** Function: SendAcStructTlm
 **
 ** Notes:
-**   1. Assumes caller is performng AC42_GetPtr() and AC42_ReleasePtr() calls.
+**   1. Assumes caller is performng BC42_TakePtr() and BC42_GivePtr() calls.
 **
 */
-static void AcStructToTlm(void)
+static void SendAcStructTlm(void)
 {
 
    int i;
-   BC42_CTRL_ControlGainsTlm_Payload_t *TlmPayload = &Ctrl42->ControlGainsTlm.Payload;
+   BC42_CTRL_ControllerTlm_Payload_t  *ControllerTlmPayload = &Ctrl42->ControllerTlm.Payload;
+   BC42_INTF_ActuatorCmdMsg_Payload_t *ActuatorCmdPayload = &Ctrl42->ActuatorCmdMsg.Payload;
    
-   Ctrl42->CtrlPkt.GpsValid = AC42_(GPS[0].Valid);
-   Ctrl42->CtrlPkt.StValid  = AC42_(StValid);  
-   Ctrl42->CtrlPkt.SunValid = AC42_(SunValid); 
+   ControllerTlmPayload->GpsValid = AC42_(GPS[0].Valid);
+   ControllerTlmPayload->StValid  = AC42_(StValid);  
+   ControllerTlmPayload->SunValid = AC42_(SunValid); 
 
-   Ctrl42->CtrlPkt.SaGcmd     = (float)AC42_(G->Cmd.Ang[0]);
-   Ctrl42->ActuatorPkt.SaGcmd = AC42_(G->Cmd.Ang[0]);
+   ControllerTlmPayload->SaGcmd = (float)AC42_(G->Cmd.Ang[0]);
+   ActuatorCmdPayload->SaGcmd   = AC42_(G->Cmd.Ang[0]);
 
    for (i=0; i < 3; i++) {
 
-      Ctrl42->CtrlPkt.wbn[i]   = (float)AC42_(wbn[i]);
-      Ctrl42->CtrlPkt.wln[i]   = (float)AC42_(wln[i]);
-      Ctrl42->CtrlPkt.qbr[i]   = (float)AC42_(qbr[i]);
-      Ctrl42->CtrlPkt.therr[i] = (float)AC42_(CfsCtrl.therr[i]);
-      Ctrl42->CtrlPkt.werr[i]  = (float)AC42_(CfsCtrl.werr[i]);
-      Ctrl42->CtrlPkt.Hvb[i]   = (float)AC42_(Hvb[i]);
-      Ctrl42->CtrlPkt.svb[i]   = (float)AC42_(svb[i]);
+      ControllerTlmPayload->wbn[i]   = (float)AC42_(wbn[i]);
+      ControllerTlmPayload->wln[i]   = (float)AC42_(wln[i]);
+      ControllerTlmPayload->qbr[i]   = (float)AC42_(qbr[i]);
+      ControllerTlmPayload->therr[i] = (float)AC42_(CfsCtrl.therr[i]);
+      ControllerTlmPayload->werr[i]  = (float)AC42_(CfsCtrl.werr[i]);
+      ControllerTlmPayload->Hvb[i]   = (float)AC42_(Hvb[i]);
+      ControllerTlmPayload->svb[i]   = (float)AC42_(svb[i]);
 
-      Ctrl42->CtrlPkt.Tcmd[i]     = (float)AC42_(Tcmd[i]); /* Wheel */
-      Ctrl42->ActuatorPkt.Tcmd[i] = AC42_(Tcmd[i]);
+      ControllerTlmPayload->Tcmd[i] = (float)AC42_(Tcmd[i]); /* Wheel */
+      ActuatorCmdPayload->Tcmd[i]   = AC42_(Tcmd[i]);
      
-      Ctrl42->CtrlPkt.Mcmd[i]     = (float)AC42_(Mcmd[i]); /* MTB   */
-      Ctrl42->ActuatorPkt.Mcmd[i] = AC42_(Mcmd[i]);
+      ControllerTlmPayload->Mcmd[i] = (float)AC42_(Mcmd[i]); /* MTB   */
+      ActuatorCmdPayload->Mcmd[i]   = AC42_(Mcmd[i]);
 
    }
 
-   Ctrl42->CtrlPkt.qbr[3] = (float)AC42_(qbr[3]);
+   ControllerTlmPayload->qbr[3] = (float)AC42_(qbr[3]);
 
-   CFE_EVS_SendEvent(CTRL42_DEBUG_EID, CFE_EVS_EventType_DEBUG, "**** SendActuatorPkt()\n");
+   CFE_EVS_SendEvent(CTRL42_DEBUG_CONTROLLER_EID, CFE_EVS_EventType_DEBUG, "**** SendActuatorPkt()\n");
+      
+   CFE_SB_TimeStampMsg(CFE_MSG_PTR(Ctrl42->ActuatorCmdMsg.TelemetryHeader));
+   CFE_SB_TransmitMsg(CFE_MSG_PTR(Ctrl42->ActuatorCmdMsg.TelemetryHeader), true);
+
+   CFE_SB_TimeStampMsg(CFE_MSG_PTR(Ctrl42->ControllerTlm.TelemetryHeader));
+   CFE_SB_TransmitMsg(CFE_MSG_PTR(Ctrl42->ControllerTlm.TelemetryHeader), true);
    
-   CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Ctrl42->ActuatorPkt);
-   CFE_SB_SendMsg((CFE_SB_Msg_t *) &Ctrl42->ActuatorPkt);
-
-   CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Ctrl42->CtrlPkt);
-   CFE_SB_SendMsg((CFE_SB_Msg_t *) &Ctrl42->CtrlPkt);
-
-} /* End AcStructToTlm() */
+} /* End SendAcStructTlm() */
 
                     
 /******************************************************************************
@@ -549,60 +555,37 @@ static void SetTakeSci(void)
 {
 
    bool TakeSci;
+   BC42_CTRL_ControllerTlm_Payload_t *ControllerTlm = &Ctrl42->ControllerTlm.Payload;
 
-   if (Ctrl42->TakeSciInitCnt <= 0)
+   if (Ctrl42->TakeSciInitCycCtr <= 0)
    {
    
-      TakeSci = ((fabs(Ctrl42->CtrlPkt.therr[0]) < Ctrl42->CtrlTbl.Data.SciThetaErrLim.X) &&
-                 (fabs(Ctrl42->CtrlPkt.therr[1]) < Ctrl42->CtrlTbl.Data.SciThetaErrLim.Y) &&
-                 (fabs(Ctrl42->CtrlPkt.therr[2]) < Ctrl42->CtrlTbl.Data.SciThetaErrLim.Z));
+      TakeSci = ((fabs(ControllerTlm->therr[0]) < Ctrl42->Tbl.Data.SciThetaLim[0]) &&
+                 (fabs(ControllerTlm->therr[1]) < Ctrl42->Tbl.Data.SciThetaLim[1]) &&
+                 (fabs(ControllerTlm->therr[2]) < Ctrl42->Tbl.Data.SciThetaLim[2]));
 
-      if (TakeSci == Ctrl42->CtrlPkt.TakeSci)
+      if (TakeSci == ControllerTlm->TakeSci)
       {
-         Ctrl42->TakeSciTransCnt = CTRL42_TAKE_SCI_TRANS_CNT;
+         Ctrl42->TakeSciInitCycCtr = Ctrl42->TakeSciTransCyc;
       }
       else
       {
-          if (Ctrl42->TakeSciTransCnt <=0)
+          if (Ctrl42->TakeSciInitCycCtr <=0)
           {
-             Ctrl42->CtrlPkt.TakeSci = TakeSci;
-             Ctrl42->TakeSciTransCnt = CTRL42_TAKE_SCI_TRANS_CNT;
+             ControllerTlm->TakeSci  = TakeSci;
+             Ctrl42->TakeSciInitCycCtr = Ctrl42->TakeSciTransCyc;
           } 
           else
           {
-             --Ctrl42->TakeSciTransCnt;
+             --Ctrl42->TakeSciInitCycCtr;
           }
       }
 
    } /* End if init cycle */
    else
    {
-      --Ctrl42->TakeSciInitCnt;
-      Ctrl42->CtrlPkt.TakeSci = false;
+      --Ctrl42->TakeSciInitCycCtr;
+      ControllerTlm->TakeSci = false;
    }
 
-} /* End SetTakeSci()
-
-
-/******************************************************************************
-** Function: TblToAcStruct
-**
-*/
-static void TblToAcStruct(void)
-{
-
-   Ctrl42->Ac42 = AC42_GetPtr();
- 
-   AC42_(CfsCtrl.Kp[0]) = Ctrl42->CtrlTbl.Data.Kp.X;
-   AC42_(CfsCtrl.Kp[1]) = Ctrl42->CtrlTbl.Data.Kp.Y;
-   AC42_(CfsCtrl.Kp[2]) = Ctrl42->CtrlTbl.Data.Kp.Z;
-
-   AC42_(CfsCtrl.Kr[0]) = Ctrl42->CtrlTbl.Data.Kr.X;
-   AC42_(CfsCtrl.Kr[1]) = Ctrl42->CtrlTbl.Data.Kr.Y;
-   AC42_(CfsCtrl.Kr[2]) = Ctrl42->CtrlTbl.Data.Kr.Z;
-
-   AC42_(CfsCtrl.Kunl)  = Ctrl42->CtrlTbl.Data.Kunl;
-
-   AC42_ReleasePtr(Ctrl42->Ac42);
-
-} /* End TblToAcStruct() */
+} /* End SetTakeSci() */

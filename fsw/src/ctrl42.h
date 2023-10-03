@@ -31,9 +31,10 @@
 ** Includes
 */
 
+#include "bc42_intf_eds_typedefs.h"
+
 #include "app_cfg.h"
 #include "bc42_lib.h"
-#include "bc42_intf.h"
 #include "ctrl42_tbl.h"
 
 /***********************/
@@ -45,19 +46,14 @@
 */
 
 
-#define CTRL42_DEMO_CTRL_MODE_EID       (CTRL42_BASE_EID +  1)
-#define CTRL42_INVLD_CTRL_MODE_EID      (CTRL42_BASE_EID +  2)
-
-#define CTRL42_SET_TARGET_WHL_MOM_EID   (CTRL42_BASE_EID +  6)
-#define CTRL42_INVLD_TARGET_WHL_MOM_EID (CTRL42_BASE_EID +  7)
-
-#define CTRL42_SET_CTRL_MODE_EID        (CTRL42_BASE_EID +  0)
-#define CTRL42_SET_BOOL_OVR_EID         (CTRL42_BASE_EID +  3)
-#define CTRL42_DEBUG_CMD_EID            (CTRL42_BASE_EID +  8)
-#define CTRL42_INIT_CONTROLLER_EID      (CTRL42_BASE_EID + 10)
-#define CTRL42_DEBUG_EID                (CTRL42_BASE_EID + 11)
-#define CTRL42_ACCEPT_NEW_TBL_EID       (CTRL42_BASE_EID + 11)
-
+#define CTRL42_SET_BOOL_OVR_EID         (CTRL42_BASE_EID + 0)
+#define CTRL42_SET_CTRL_MODE_EID        (CTRL42_BASE_EID + 1)
+#define CTRL42_ENA_DEBUG_CMD_EID        (CTRL42_BASE_EID + 2)
+#define CTRL42_DIS_DEBUG_CMD_EID        (CTRL42_BASE_EID + 3)
+#define CTRL42_WHL_TARGET_MOM_CMD_EID   (CTRL42_BASE_EID + 4)
+#define CTRL42_INIT_CONTROLLER_EID      (CTRL42_BASE_EID + 5)
+#define CTRL42_DEBUG_CONTROLLER_EID     (CTRL42_BASE_EID + 6)
+#define CTRL42_ACCEPT_NEW_TBL_EID       (CTRL42_BASE_EID + 7)
 
 
 /**********************/
@@ -95,7 +91,7 @@ typedef struct
    */
    
    BC42_Class_t      *Bc42;
-   CTRL42_TBL_Class_t CtrlTbl;
+   CTRL42_TBL_Class_t Tbl;
 
    /*
    ** CTRL42 Data 
@@ -111,11 +107,11 @@ typedef struct
    BC42_CTRL_Bool42State_Enum_t  BoolOverride[BC42_CTRL_Bool42State_COUNT];
    uint16  CtrlMode;
    
-   float   Hcmd[AC42_NWHL]; /* TODO - 42 controller command interface */
+   float   Hcmd[BC42_NWHL]; /* TODO - 42 controller command interface */
    
-   int32   DebugFileHandle;
-   bool    DebugEnabled;
-   char    DebugFilename[OS_MAX_PATH_LEN];
+   bool      DebugEnabled;
+   osal_id_t DebugFileHandle;
+   char      DebugFilename[OS_MAX_PATH_LEN];
    
 } CTRL42_Class_t;
 
@@ -133,7 +129,8 @@ typedef struct
 **   1. This must be called prior to any other function.
 **
 */
-void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl);
+void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl,
+                        TBLMGR_Class_t *TblMgr);
 
 
 /******************************************************************************

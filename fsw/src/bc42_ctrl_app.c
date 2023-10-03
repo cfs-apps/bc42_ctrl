@@ -46,7 +46,7 @@
 /*******************************/
 
 static int32 InitApp(void);
-static void ProcessCmdPipe(void);
+static int32 ProcessCmdPipe(void);
 static void SendHousekeepingPkt(void);
 
 
@@ -63,7 +63,7 @@ DEFINE_ENUM(Config,APP_CONFIG)
 static CFE_EVS_BinFilter_t  EventFilters[] =
 {  
    /* Event ID                           Mask */
-   {CTRL42_DEBUG_EID ,  CFE_EVS_FIRST_64_STOP}, //CFE_EVS_NO_FILTER
+   {CTRL42_DEBUG_CONTROLLER_EID,  CFE_EVS_FIRST_64_STOP}, //CFE_EVS_NO_FILTER
 };
 
 /*****************/
@@ -105,7 +105,7 @@ void BC42_CTRL_AppMain(void)
 
    CFE_ES_WriteToSysLog("Bascamp 42 Controller App terminating, run status = 0x%08X\n", RunStatus);   /* Use SysLog, events may not be working */
 
-   CFE_EVS_SendEvent(BC42_INTF_EXIT_EID, CFE_EVS_EventType_CRITICAL, "Bascamp 42 Controller App terminating, run status = 0x%08X", RunStatus);
+   CFE_EVS_SendEvent(BC42_CTRL_EXIT_EID, CFE_EVS_EventType_CRITICAL, "Bascamp 42 Controller App terminating, run status = 0x%08X", RunStatus);
 
    CFE_ES_ExitApp(RunStatus);  /* Let cFE kill the task (and any child tasks) */
 
@@ -135,7 +135,7 @@ bool BC42_CTRL_NoOpCmd(void* ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 **
 */
 
-boolean BC42_CTRL_ResetAppCmd(void* ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
+bool BC42_CTRL_ResetAppCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 {
 
    CMDMGR_ResetStatus(CMDMGR_OBJ);
@@ -179,23 +179,23 @@ static int32 InitApp(void)
       /*
       ** Initialize objects 
       */
-      CTRL42_Constructor(CTRL42_OBJ, INITBL_OBJ);
+      CTRL42_Constructor(CTRL42_OBJ, INITBL_OBJ, TBLMGR_OBJ);
  
       /*
       ** Initialize app level interfaces
       */
       CFE_SB_CreatePipe(&Bc42Ctrl.CmdPipe, INITBL_GetIntConfig(INITBL_OBJ, CFG_APP_CMD_PIPE_DEPTH), INITBL_GetStrConfig(INITBL_OBJ, CFG_APP_CMD_PIPE_NAME));
-      CFE_SB_Subscribe(Bc42Ctrl.CmdMid, Bc42Intf.CmdPipe);
-      CFE_SB_Subscribe(Bc42Ctrl.ExecuteMid, Bc42Intf.CmdPipe);
-      CFE_SB_Subscribe(Bc42Ctrl.SensorDataMsgMid, Bc42Intf.CmdPipe);
+      CFE_SB_Subscribe(Bc42Ctrl.CmdMid, Bc42Ctrl.CmdPipe);
+      CFE_SB_Subscribe(Bc42Ctrl.ExecuteMid, Bc42Ctrl.CmdPipe);
+      CFE_SB_Subscribe(Bc42Ctrl.SensorDataMsgMid, Bc42Ctrl.CmdPipe);
    
       CMDMGR_Constructor(CMDMGR_OBJ);
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_NOOP_CC,           NULL, BC42_INTF_NoOpCmd,     0);
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_RESET_CC,          NULL, BC42_INTF_ResetAppCmd, 0);
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_NOOP_CC,           NULL, BC42_CTRL_NoOpCmd,     0);
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_RESET_CC,          NULL, BC42_CTRL_ResetAppCmd, 0);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_LOAD_TBL_CC, TBLMGR_OBJ, TBLMGR_LoadTblCmd,     TBLMGR_LOAD_TBL_CMD_DATA_LEN);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_DUMP_TBL_CC, TBLMGR_OBJ, TBLMGR_DumpTblCmd,     TBLMGR_DUMP_TBL_CMD_DATA_LEN);
       
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SEND_CTRL_GAINS_CC,      CTRL42_OBJ, CTRL42_SendCtrlGainsTlmCmd,  0);
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SEND_CTRL_GAINS_TLM_CC,  CTRL42_OBJ, CTRL42_SendCtrlGainsTlmCmd,  0);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_CTRL_MODE_CC,        CTRL42_OBJ, CTRL42_SetCtrlModeCmd,       sizeof(BC42_CTRL_SetCtrlModeCmd_Payload_t));
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_BOOL_OVR_STATE_CC,   CTRL42_OBJ, CTRL42_SetBoolOvrStateCmd,   sizeof(BC42_CTRL_SetBoolOvrStateCmd_Payload_t));
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_WHEEL_TARGET_MOM_CC, CTRL42_OBJ, CTRL42_SetWheelTargetMomCmd, sizeof(BC42_CTRL_SetWheelTargetMomCmd_Payload_t));
@@ -211,9 +211,11 @@ static int32 InitApp(void)
                         "BC42_CTRL App Initialized. Version %d.%d.%d",
                         BC42_CTRL_MAJOR_VER, BC42_CTRL_MINOR_VER, BC42_CTRL_PLATFORM_REV);
 
+      RetStatus = CFE_SUCCESS;
+      
    } /* End if INITBL Constructed */ 
    
-   return(RetStatus);
+   return  RetStatus;
 
 } /* End of InitApp() */
 
@@ -221,52 +223,81 @@ static int32 InitApp(void)
 /******************************************************************************
 ** Function: ProcessCmdPipe
 **
+** Notes:
+**   1. TODO: Decide on execution design and relationshop with BC42_INTF.
+**      - Use scheduler to drive execution and sensor data messages are flushed
+**        and run controller once on the last sensor data packet. Status packet
+**        sent each scheduler execution. 
+**      - Execute controller for each sensor data packet. Status packet sent for
+**        controller execution. It can be filtered down stream. 
 */
-static void ProcessSbPipe(void)
+static int32 ProcessCmdPipe(void)
 {
    
    int32   RetStatus = CFE_ES_RunStatus_APP_RUN;
    int32   SbStatus;
    int32   MsgStatus;
+   int32   SensorMsgCnt = 0;
    
    CFE_SB_Buffer_t  *SbBufPtr;
    CFE_SB_MsgId_t   MsgId = CFE_SB_INVALID_MSG_ID;
    
-   
+
    CFE_ES_PerfLogExit(Bc42Ctrl.PerfId);
    SbStatus = CFE_SB_ReceiveBuffer(&SbBufPtr, Bc42Ctrl.CmdPipe, CFE_SB_PEND_FOREVER);
    CFE_ES_PerfLogEntry(Bc42Ctrl.PerfId);
-
-   if (SbStatus == CFE_SUCCESS)
+   
+   do
    {
-      MsgStatus = CFE_MSG_GetMsgId(&SbBufPtr->Msg, &MsgId);
-
-      if (MsgStatus == CFE_SUCCESS)
+    
+      if (SbStatus == CFE_SUCCESS)
       {
-         if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.CmdMid))
+         MsgStatus = CFE_MSG_GetMsgId(&SbBufPtr->Msg, &MsgId);
+
+         if (MsgStatus == CFE_SUCCESS)
          {
-            CMDMGR_DispatchFunc(CMDMGR_OBJ, &SbBufPtr->Msg);
-         }
-         else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.ExecuteMid))
-         {
-            SendHousekeepingPkt();
-         }
-         else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.ActuatorCmdMsgMid))
-         {
-            CTRL42_Run42Fsw((IF42_SensorDataPkt*) SbMsgPtr);
-         }
-         else
-         {            
-            CFE_EVS_SendEvent(BC42_INTF_INVALID_MID_EID, CFE_EVS_EventType_ERROR,
-                              "Received invalid command packet, MID = 0x%04X(%d)", 
-                              CFE_SB_MsgIdToValue(MsgId), CFE_SB_MsgIdToValue(MsgId));
-         }
-      } /* End valid message ID */
-   } /* End if SB received a packet */
+            if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.CmdMid))
+            {
+               CMDMGR_DispatchFunc(CMDMGR_OBJ, &SbBufPtr->Msg);
+            }
+            else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.ExecuteMid))
+            {               
+               SendHousekeepingPkt();
+            }
+            else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.SensorDataMsgMid))
+            {
+               SensorMsgCnt++;
+               CTRL42_Run42Fsw((BC42_INTF_SensorDataMsg_t *)&SbBufPtr->Msg);
+            }
+            else
+            {            
+               CFE_EVS_SendEvent(BC42_CTRL_PROCESS_CMD_PIPE_EID, CFE_EVS_EventType_ERROR,
+                                 "Received invalid command packet, MID = 0x%04X(%d)", 
+                                 CFE_SB_MsgIdToValue(MsgId), CFE_SB_MsgIdToValue(MsgId));
+            }
+         } /* End valid message ID */
+      } /* End if SB received a packet */
+      
+      CFE_ES_PerfLogExit(Bc42Ctrl.PerfId);
+      SbStatus = CFE_SB_ReceiveBuffer(&SbBufPtr, Bc42Ctrl.CmdPipe, CFE_SB_POLL);
+      CFE_ES_PerfLogEntry(Bc42Ctrl.PerfId);      
+
+   } while (SbStatus == CFE_SUCCESS);
+
+   if (SbStatus != CFE_SB_NO_MESSAGE)
+   {
+      RetStatus = CFE_ES_RunStatus_APP_ERROR;
+   }
+
+   if (SensorMsgCnt > 1)
+   {
+      CFE_EVS_SendEvent(BC42_CTRL_PROCESS_CMD_PIPE_EID, CFE_EVS_EventType_INFORMATION,
+                        "Processed %d sensor data messages in one execution cycle",SensorMsgCnt);      
+   }
 
    return RetStatus;
    
-} /* End ProcessSbPipe() */
+} /* End ProcessCmdPipe() */
 
 /******************************************************************************
 ** Function: SendHousekeepingPkt
@@ -294,9 +325,9 @@ static void SendHousekeepingPkt(void)
    ** CTRL42 Data
    */
 
-   Payload->ControlExecutionCnt = Bc42Ctrl.Ctrl42.ControlExecutionCnt;
+   Payload->ControlExecutionCnt = Bc42Ctrl.Ctrl42.CtrlExeCnt;
    Payload->ControlMode         = Bc42Ctrl.Ctrl42.CtrlMode;
-   Payload->OverrideSunValid    = Bc42Ctrl.Ctrl42.BoolOverride[BC42_CTRL_Bool42Id_Enum_t];
+   Payload->OverrideSunValid    = Bc42Ctrl.Ctrl42.BoolOverride[BC42_CTRL_Bool42Id_Sun_VALID];
 
    CFE_SB_TimeStampMsg(CFE_MSG_PTR(Bc42Ctrl.StatusTlm.TelemetryHeader));
    CFE_SB_TransmitMsg(CFE_MSG_PTR(Bc42Ctrl.StatusTlm.TelemetryHeader), true);

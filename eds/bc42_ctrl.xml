@@ -98,6 +98,22 @@
       <!--**** DataTypeSet: Command Payloads ****-->
       <!--***************************************-->
 
+      <ContainerDataType name="LoadTblCmd_Payload" shortDescription="Load an app's JSON table">
+        <EntryList>
+          <Entry name="Id"       type="TblId"                   shortDescription="Table identifier" />
+          <Entry name="Type"     type="APP_C_FW/TblLoadOptions" shortDescription="Replace entire table or perform sparse entry updates" />
+          <Entry name="Filename" type="BASE_TYPES/PathName"     shortDescription="Full path and file name of table to be loaded" />
+       </EntryList>
+      </ContainerDataType>
+      
+      <ContainerDataType name="DumpTblCmd_Payload" shortDescription="Dump an app's JSON table">
+        <EntryList>
+          <Entry name="Id"       type="TblId"               shortDescription="Table identifier" />
+          <Entry name="Unused"   type="BASE_TYPES/uint8"    shortDescription="Unused" />
+          <Entry name="Filename" type="BASE_TYPES/PathName" shortDescription="Full path and file name of table to be dumped" />
+       </EntryList>
+      </ContainerDataType>
+      
       <ContainerDataType name="SetCtrlModeCmd_Payload" shortDescription="">
         <EntryList>
           <Entry name="NewMode"   type="ControlMode" shortDescription="" />
@@ -185,7 +201,7 @@
           <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/LOAD_TBL_CC}" />
         </ConstraintSet>
         <EntryList>
-          <Entry type="LoadTbl_Payload" name="Payload" />
+          <Entry type="LoadTblCmd_Payload" name="Payload" />
         </EntryList>
       </ContainerDataType>
 
@@ -194,7 +210,7 @@
           <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/DUMP_TBL_CC}" />
         </ConstraintSet>
         <EntryList>
-          <Entry type="DumpTbl_Payload" name="Payload" />
+          <Entry type="DumpTblCmd_Payload" name="Payload" />
         </EntryList>
       </ContainerDataType>
 
