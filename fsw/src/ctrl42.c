@@ -100,8 +100,8 @@ void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl,
    strncpy (Ctrl42->DebugFilename, INITBL_GetStrConfig(IniTbl, CFG_CTRL42_DEBUG_FILE),OS_MAX_PATH_LEN);
    Ctrl42->DebugFilename[OS_MAX_PATH_LEN-1] = '\0';
    
-   CTRL42_TBL_Constructor(&(Ctrl42->Tbl), AcceptNewTbl, INITBL_GetStrConfig(IniTbl, CFG_APP_CFE_NAME));
-   TBLMGR_RegisterTblWithDef(TblMgr, CTRL42_TBL_LoadCmd, CTRL42_TBL_DumpCmd,  
+   CTRL42_TBL_Constructor(&(Ctrl42->Tbl), AcceptNewTbl);
+   TBLMGR_RegisterTblWithDef(TblMgr, CTRL42_TBL_NAME, CTRL42_TBL_LoadCmd, CTRL42_TBL_DumpCmd,  
                              INITBL_GetStrConfig(IniTbl, CFG_CTRL42_TBL_LOAD_FILE));
 
    CFE_MSG_Init(CFE_MSG_PTR(Ctrl42->ActuatorCmdMsg.TelemetryHeader), 
@@ -297,7 +297,7 @@ bool CTRL42_SendCtrlGainsTlmCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPt
 bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 {
 
-   const BC42_CTRL_SetBoolOvrStateCmd_Payload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetBoolOvrStateCmd_t);
+   const BC42_CTRL_SetBoolOvrState_CmdPayload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetBoolOvrState_t);
    bool  RetStatus = false;
    int   i;
    
@@ -347,7 +347,7 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
 bool CTRL42_SetCtrlModeCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 {
 
-   const BC42_CTRL_SetCtrlModeCmd_Payload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetCtrlModeCmd_t);
+   const BC42_CTRL_SetCtrlMode_CmdPayload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetCtrlMode_t);
    bool  RetStatus = true;
 
    CFE_EVS_SendEvent(CTRL42_SET_CTRL_MODE_EID, CFE_EVS_EventType_INFORMATION,
@@ -367,7 +367,7 @@ bool CTRL42_SetCtrlModeCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 bool CTRL42_SetWheelTargetMomCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 {
 
-   const BC42_CTRL_SetWheelTargetMomCmd_Payload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetWheelTargetMomCmd_t);
+   const BC42_CTRL_SetWheelTargetMom_CmdPayload_t *CmdPayload = CMDMGR_PAYLOAD_PTR(MsgPtr, BC42_CTRL_SetWheelTargetMom_t);
    bool   RetStatus = false;
    uint8  ValidWheels = 0, i;   
 

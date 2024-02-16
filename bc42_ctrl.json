@@ -1,0 +1,33 @@
+{
+
+   "app": {
+   
+   "title": "BC42_CTRL",
+   "version": "1.0.0",
+   "supplier": "Open STEMware",
+   "copyright": "bitValence",
+   "url": "https://github.com/cfs-apps/bc42_ctrl",
+
+   "description": [
+      "Spacecraft attitude control law app that runs with",
+      "the 42 simulator." 
+   ],
+
+   "cfs": {
+      "cfe-type": "CFE_APP",
+      "obj-file": "bc42_ctrl",
+      "entry-symbol": "BC42_CTRL_AppMain",
+      "name": "BC42_CTRL",
+      "priority": 40,
+      "stack": 16384,
+      "load_addr": 0,
+      "exception-action": 0,
+      "app-framework": "osk",
+      "tables": ["bc42_ctrl_ini.json","bc42_ctrl_prm.json"]
+   },
+
+   "requires": ["app_c_fw","bc42_lib","bc42_intf"]
+
+}}
+
+

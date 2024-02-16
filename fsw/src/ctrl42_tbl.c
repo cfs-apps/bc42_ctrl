@@ -82,8 +82,7 @@ static CJSON_Obj_t JsonTblObjs[] =
 **
 */
 void CTRL42_TBL_Constructor(CTRL42_TBL_Class_t *Ctrl42TblPtr, 
-                            CTRL42_TBL_LoadFunc_t LoadFunc,
-                            const char *AppName)
+                            CTRL42_TBL_LoadFunc_t LoadFunc)
 {
 
    Ctrl42Tbl = Ctrl42TblPtr;
@@ -91,7 +90,6 @@ void CTRL42_TBL_Constructor(CTRL42_TBL_Class_t *Ctrl42TblPtr,
    CFE_PSP_MemSet(Ctrl42Tbl, 0, sizeof(CTRL42_TBL_Class_t));
  
    Ctrl42Tbl->LoadFunc = LoadFunc;
-   Ctrl42Tbl->AppName  = AppName;
    Ctrl42Tbl->JsonObjCnt = (sizeof(JsonTblObjs)/sizeof(CJSON_Obj_t));
          
 } /* End CTRL42_TBL_Constructor() */
@@ -102,76 +100,34 @@ void CTRL42_TBL_Constructor(CTRL42_TBL_Class_t *Ctrl42TblPtr,
 **
 ** Notes:
 **  1. Function signature must match TBLMGR_DumpTblFuncPtr_t.
-**  2. Can assume valid table filename because this is a callback from 
-**     the app framework table manager that has verified the file.
-**  3. DumpType is unused.
-**  4. File is formatted so it can be used as a load file. It does not follow
-**     the cFE table file format. 
-**  5. Creates a new dump file, overwriting anything that may have existed
-**     previously
+**  2. File is formatted so it can be used as a load file.
 */
-bool CTRL42_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filename)
+bool CTRL42_TBL_DumpCmd(osal_id_t FileHandle)
 {
 
-   bool       RetStatus = false;
-   int32      SysStatus;
-   osal_id_t  FileHandle;
-   os_err_name_t OsErrStr;
    char DumpRecord[256];
-   char SysTimeStr[128];
 
-   
-   SysStatus = OS_OpenCreate(&FileHandle, Filename, OS_FILE_FLAG_CREATE, OS_READ_WRITE);
+   sprintf(DumpRecord,"   \"kp\": {\n      \"x\": %4.8e,\n      \"y\": %4.8e,\n      \"z\": %4.8e\n   },\n",
+           Ctrl42Tbl->Data.Kp[0], Ctrl42Tbl->Data.Kp[1], Ctrl42Tbl->Data.Kp[2]);
+   OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
 
-   if (SysStatus == OS_SUCCESS)
-   {
- 
-      sprintf(DumpRecord,"{\n   \"app-name\": \"%s\",\n   \"tbl-name\": \"Ctrl42\",\n", Ctrl42Tbl->AppName);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
+   sprintf(DumpRecord,"   \"kr\": {\n      \"x\": %4.8e,\n      \"y\": %4.8e,\n      \"z\": %4.8e\n   },\n",
+           Ctrl42Tbl->Data.Kr[0], Ctrl42Tbl->Data.Kr[1], Ctrl42Tbl->Data.Kr[2]);
+   OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
 
-      CFE_TIME_Print(SysTimeStr, CFE_TIME_GetTime());
-      sprintf(DumpRecord,"   \"description\": \"Table dumped at %s\",\n",SysTimeStr);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
+   sprintf(DumpRecord,"   \"kunl\": {\n      \"k\": %4.8e   },\n",
+           Ctrl42Tbl->Data.Kunl);
+   OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
 
- 
-      sprintf(DumpRecord,"   \"kp\": {\n      \"x\": %4.8e,\n      \"y\": %4.8e,\n      \"z\": %4.8e\n   },\n",
-              Ctrl42Tbl->Data.Kp[0], Ctrl42Tbl->Data.Kp[1], Ctrl42Tbl->Data.Kp[2]);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
+   sprintf(DumpRecord,"   \"hcmd-lim\": {\n      \"lower\": %4.8e,\n      \"upper\": %4.8e\n   },\n",
+           Ctrl42Tbl->Data.HcmdLim.Lower, Ctrl42Tbl->Data.HcmdLim.Upper);
+   OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
 
-      sprintf(DumpRecord,"   \"kr\": {\n      \"x\": %4.8e,\n      \"y\": %4.8e,\n      \"z\": %4.8e\n   },\n",
-              Ctrl42Tbl->Data.Kr[0], Ctrl42Tbl->Data.Kr[1], Ctrl42Tbl->Data.Kr[2]);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
-   
-      sprintf(DumpRecord,"   \"kunl\": {\n      \"k\": %4.8e   },\n",
-              Ctrl42Tbl->Data.Kunl);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
+   sprintf(DumpRecord,"   \"sci-theta-lim\": {\n      \"x\": %4.8e,\n      \"y\": %4.8e,\n      \"z\": %4.8e\n   }\n",
+           Ctrl42Tbl->Data.SciThetaLim[0], Ctrl42Tbl->Data.SciThetaLim[1], Ctrl42Tbl->Data.SciThetaLim[2]);
+   OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
 
-      sprintf(DumpRecord,"   \"hcmd-lim\": {\n      \"lower\": %4.8e,\n      \"upper\": %4.8e\n   },\n",
-              Ctrl42Tbl->Data.HcmdLim.Lower, Ctrl42Tbl->Data.HcmdLim.Upper);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
-
-      sprintf(DumpRecord,"   \"sci-theta-lim\": {\n      \"x\": %4.8e,\n      \"y\": %4.8e,\n      \"z\": %4.8e\n   }\n}",
-              Ctrl42Tbl->Data.SciThetaLim[0], Ctrl42Tbl->Data.SciThetaLim[1], Ctrl42Tbl->Data.SciThetaLim[2]);
-      OS_write(FileHandle, DumpRecord, strlen(DumpRecord));
-
-      OS_close(FileHandle);
-
-      CFE_EVS_SendEvent(CTRL42_TBL_DUMP_EID, CFE_EVS_EventType_DEBUG,
-                        "Successfully created dump file %s", Filename);
-
-      RetStatus = true;
-
-   } /* End if file create */
-   else
-   {
-      OS_GetErrorName(SysStatus, &OsErrStr);
-      CFE_EVS_SendEvent(CTRL42_TBL_DUMP_EID, CFE_EVS_EventType_ERROR,
-                        "Error creating dump file '%s', status=%s",
-                        Filename, OsErrStr);
-   
-   } /* End if file create error */
-
-   return RetStatus;
+   return true;
    
 } /* End of CTRL42_TBL_DumpCmd() */
 
@@ -181,10 +137,8 @@ bool CTRL42_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filename)
 **
 ** Notes:
 **  1. Function signature must match TBLMGR_LoadTblFuncPtr_t.
-**  2. This could migrate into table manager but I think I'll keep it here so
-**     user's can add table processing code if needed.
 */
-bool CTRL42_TBL_LoadCmd(TBLMGR_Tbl_t *Tbl, uint8 LoadType, const char *Filename)
+bool CTRL42_TBL_LoadCmd(APP_C_FW_TblLoadOptions_Enum_t LoadType, const char *Filename)
 {
 
    bool  RetStatus = false;
@@ -192,13 +146,8 @@ bool CTRL42_TBL_LoadCmd(TBLMGR_Tbl_t *Tbl, uint8 LoadType, const char *Filename)
    if (CJSON_ProcessFile(Filename, Ctrl42Tbl->JsonBuf, CTRL42_TBL_JSON_FILE_MAX_CHAR, LoadJsonData))
    {
       Ctrl42Tbl->Loaded = true;
-      Ctrl42Tbl->LastLoadStatus = TBLMGR_STATUS_VALID;
       if (Ctrl42Tbl->LoadFunc != NULL) (Ctrl42Tbl->LoadFunc)();
       RetStatus = true;   
-   }
-   else
-   {
-      Ctrl42Tbl->LastLoadStatus = TBLMGR_STATUS_INVALID;
    }
 
    return RetStatus;
@@ -213,7 +162,6 @@ bool CTRL42_TBL_LoadCmd(TBLMGR_Tbl_t *Tbl, uint8 LoadType, const char *Filename)
 void CTRL42_TBL_ResetStatus(void)
 {
 
-   Ctrl42Tbl->LastLoadStatus = TBLMGR_STATUS_UNDEF;
    Ctrl42Tbl->LastLoadCnt = 0;
  
 } /* End CTRL42_TBL_ResetStatus() */

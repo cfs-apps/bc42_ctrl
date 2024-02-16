@@ -94,9 +94,7 @@ typedef struct
    ** Standard CJSON table data
    */
    
-   const char*  AppName;
    bool         Loaded;   /* Has entire table been loaded? */
-   uint8        LastLoadStatus;
    uint16       LastLoadCnt;
    
    size_t       JsonObjCnt;
@@ -122,8 +120,7 @@ typedef struct
 **
 */
 void CTRL42_TBL_Constructor(CTRL42_TBL_Class_t *TblObj, 
-                            CTRL42_TBL_LoadFunc_t LoadFunc,
-                            const char *AppName);
+                            CTRL42_TBL_LoadFunc_t LoadFunc);
 
 
 /******************************************************************************
@@ -133,11 +130,9 @@ void CTRL42_TBL_Constructor(CTRL42_TBL_Class_t *TblObj,
 **
 ** Notes:
 **  1. Function signature must match TBLMGR_DumpTblFuncPtr_t.
-**  2. Can assume valid table file name because this is a callback from 
-**     the app framework table manager.
 **
 */
-bool CTRL42_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filename);
+bool CTRL42_TBL_DumpCmd(osal_id_t FileHandle);
 
 
 /******************************************************************************
@@ -151,7 +146,7 @@ bool CTRL42_TBL_DumpCmd(TBLMGR_Tbl_t *Tbl, uint8 DumpType, const char *Filename)
 **     the app framework table manager.
 **
 */
-bool CTRL42_TBL_LoadCmd(TBLMGR_Tbl_t *Tbl, uint8 LoadType, const char *Filename);
+bool CTRL42_TBL_LoadCmd(APP_C_FW_TblLoadOptions_Enum_t LoadType, const char *Filename);
 
 
 /******************************************************************************

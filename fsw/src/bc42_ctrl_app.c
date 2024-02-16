@@ -170,11 +170,11 @@ static int32 InitApp(void)
 
       Bc42Ctrl.CmdMid            = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_CMD_TOPICID));
       Bc42Ctrl.StatusTlmMid      = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_STATUS_TLM_TOPICID));
-      Bc42Ctrl.ExecuteMid        = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC_SCH_1_HZ_TOPICID));
+      Bc42Ctrl.ExecuteMid        = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_EXECUTE_TOPICID));
       Bc42Ctrl.SensorDataMsgMid  = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_INTF_SENSOR_DATA_MSG_TOPICID));
 
       /* Must constructor table manager prior to any app objects that contain tables */
-      TBLMGR_Constructor(TBLMGR_OBJ);
+      TBLMGR_Constructor(TBLMGR_OBJ, INITBL_GetStrConfig(INITBL_OBJ, CFG_APP_CFE_NAME));
 
       /*
       ** Initialize objects 
@@ -192,13 +192,13 @@ static int32 InitApp(void)
       CMDMGR_Constructor(CMDMGR_OBJ);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_NOOP_CC,           NULL, BC42_CTRL_NoOpCmd,     0);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_RESET_CC,          NULL, BC42_CTRL_ResetAppCmd, 0);
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_LOAD_TBL_CC, TBLMGR_OBJ, TBLMGR_LoadTblCmd,     TBLMGR_LOAD_TBL_CMD_DATA_LEN);
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_DUMP_TBL_CC, TBLMGR_OBJ, TBLMGR_DumpTblCmd,     TBLMGR_DUMP_TBL_CMD_DATA_LEN);
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_LOAD_TBL_CC, TBLMGR_OBJ, TBLMGR_LoadTblCmd,     sizeof(BC42_CTRL_LoadTbl_CmdPayload_t));
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_DUMP_TBL_CC, TBLMGR_OBJ, TBLMGR_DumpTblCmd,     sizeof(BC42_CTRL_DumpTbl_CmdPayload_t));
       
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SEND_CTRL_GAINS_TLM_CC,  CTRL42_OBJ, CTRL42_SendCtrlGainsTlmCmd,  0);
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_CTRL_MODE_CC,        CTRL42_OBJ, CTRL42_SetCtrlModeCmd,       sizeof(BC42_CTRL_SetCtrlModeCmd_Payload_t));
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_BOOL_OVR_STATE_CC,   CTRL42_OBJ, CTRL42_SetBoolOvrStateCmd,   sizeof(BC42_CTRL_SetBoolOvrStateCmd_Payload_t));
-      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_WHEEL_TARGET_MOM_CC, CTRL42_OBJ, CTRL42_SetWheelTargetMomCmd, sizeof(BC42_CTRL_SetWheelTargetMomCmd_Payload_t));
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_CTRL_MODE_CC,        CTRL42_OBJ, CTRL42_SetCtrlModeCmd,       sizeof(BC42_CTRL_SetCtrlMode_CmdPayload_t));
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_BOOL_OVR_STATE_CC,   CTRL42_OBJ, CTRL42_SetBoolOvrStateCmd,   sizeof(BC42_CTRL_SetBoolOvrState_CmdPayload_t));
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_WHEEL_TARGET_MOM_CC, CTRL42_OBJ, CTRL42_SetWheelTargetMomCmd, sizeof(BC42_CTRL_SetWheelTargetMom_CmdPayload_t));
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_ENABLE_DEBUG_LOG_CC,     CTRL42_OBJ, CTRL42_EnableDebugLogCmd,    0);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_DISABLE_DEBUG_LOG_CC,    CTRL42_OBJ, CTRL42_DisableDebugLogCmd,   0);
 
