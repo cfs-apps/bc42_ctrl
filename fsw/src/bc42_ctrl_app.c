@@ -47,7 +47,7 @@
 
 static int32 InitApp(void);
 static int32 ProcessCmdPipe(void);
-static void SendHousekeepingPkt(void);
+static void SendStatusTlmMsg(void);
 
 
 /**********************/
@@ -170,7 +170,7 @@ static int32 InitApp(void)
 
       Bc42Ctrl.CmdMid            = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_CMD_TOPICID));
       Bc42Ctrl.StatusTlmMid      = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_STATUS_TLM_TOPICID));
-      Bc42Ctrl.ExecuteMid        = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_EXECUTE_TOPICID));
+      Bc42Ctrl.SendStatusTlmMid  = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_SEND_STATUS_TLM_TOPICID));
       Bc42Ctrl.SensorDataMsgMid  = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_INTF_SENSOR_DATA_MSG_TOPICID));
 
       /* Must constructor table manager prior to any app objects that contain tables */
@@ -186,9 +186,9 @@ static int32 InitApp(void)
       */
       CFE_SB_CreatePipe(&Bc42Ctrl.CmdPipe, INITBL_GetIntConfig(INITBL_OBJ, CFG_APP_CMD_PIPE_DEPTH), INITBL_GetStrConfig(INITBL_OBJ, CFG_APP_CMD_PIPE_NAME));
       CFE_SB_Subscribe(Bc42Ctrl.CmdMid, Bc42Ctrl.CmdPipe);
-      CFE_SB_Subscribe(Bc42Ctrl.ExecuteMid, Bc42Ctrl.CmdPipe);
+      CFE_SB_Subscribe(Bc42Ctrl.SendStatusTlmMid, Bc42Ctrl.CmdPipe);
       CFE_SB_Subscribe(Bc42Ctrl.SensorDataMsgMid, Bc42Ctrl.CmdPipe);
-   
+         
       CMDMGR_Constructor(CMDMGR_OBJ);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_NOOP_CC,           NULL, BC42_CTRL_NoOpCmd,     0);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_RESET_CC,          NULL, BC42_CTRL_ResetAppCmd, 0);
@@ -224,12 +224,7 @@ static int32 InitApp(void)
 ** Function: ProcessCmdPipe
 **
 ** Notes:
-**   1. TODO: Decide on execution design and relationshop with BC42_INTF.
-**      - Use scheduler to drive execution and sensor data messages are flushed
-**        and run controller once on the last sensor data packet. Status packet
-**        sent each scheduler execution. 
-**      - Execute controller for each sensor data packet. Status packet sent for
-**        controller execution. It can be filtered down stream. 
+**   None
 */
 static int32 ProcessCmdPipe(void)
 {
@@ -260,9 +255,9 @@ static int32 ProcessCmdPipe(void)
             {
                CMDMGR_DispatchFunc(CMDMGR_OBJ, &SbBufPtr->Msg);
             }
-            else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.ExecuteMid))
-            {               
-               SendHousekeepingPkt();
+            else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.SendStatusTlmMid))
+            {
+               SendStatusTlmMsg();
             }
             else if (CFE_SB_MsgId_Equal(MsgId, Bc42Ctrl.SensorDataMsgMid))
             {
@@ -299,18 +294,19 @@ static int32 ProcessCmdPipe(void)
    
 } /* End ProcessCmdPipe() */
 
-/******************************************************************************
-** Function: SendHousekeepingPkt
+
+/***********************************3*******************************************
+** Function: SendStatusTlmMsg
 **
 */
-static void SendHousekeepingPkt(void)
+static void SendStatusTlmMsg(void)
 {
   
    /* Good design practice in case app expands to more than one table */
    const TBLMGR_Tbl_t *LastTbl = TBLMGR_GetLastTblStatus(TBLMGR_OBJ);
 
    BC42_CTRL_StatusTlm_Payload_t *Payload = &Bc42Ctrl.StatusTlm.Payload;
- 	  
+  
    /*
    ** F42 Application Data
    */
@@ -332,4 +328,4 @@ static void SendHousekeepingPkt(void)
    CFE_SB_TimeStampMsg(CFE_MSG_PTR(Bc42Ctrl.StatusTlm.TelemetryHeader));
    CFE_SB_TransmitMsg(CFE_MSG_PTR(Bc42Ctrl.StatusTlm.TelemetryHeader), true);
 
-} /* End SendHousekeepingPkt() */
+} /* End SendStatusTlmMsg() */

@@ -46,11 +46,6 @@
 /** Type Definitions **/
 /**********************/
 
-/*
-** Table load callback function
-*/
-typedef void (*CTRL42_TBL_LoadFunc_t)(void);
-
 
 /******************************************************************************
 ** Table - Local table copy used for table loads
@@ -74,6 +69,11 @@ typedef struct
    CTRL42_TBL_Lim_t HcmdLim;
    
 } CTRL42_TBL_Data_t;
+
+/*
+** Table load callback function
+*/
+typedef bool (*CTRL42_TBL_LoadFunc_t)(const CTRL42_TBL_Data_t *TblData);
 
 
 /******************************************************************************

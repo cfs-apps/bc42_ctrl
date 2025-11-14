@@ -41,6 +41,9 @@
 /** Macro Definitions **/
 /***********************/
 
+#define BC42_NWHL  4  // TODO: Figure out good way to use 42 configuration that is defined in 42 text script
+
+
 /*
 ** Event Message IDs
 */
@@ -79,14 +82,6 @@ typedef struct
 
 
    /*
-   ** Telemetry
-   */
-   
-   BC42_CTRL_ControllerTlm_t     ControllerTlm;
-   BC42_CTRL_ControlGainsTlm_t   ControlGainsTlm;
-   BC42_INTF_ActuatorCmdMsg_t    ActuatorCmdMsg;
-
-   /*
    ** Contained Objects
    */
    
@@ -99,6 +94,7 @@ typedef struct
    
    uint32  CtrlExeCnt;
 
+   bool    TakeSci;
    int16   TakeSciInitCyc;
    int16   TakeSciInitCycCtr;
    int16   TakeSciTransCyc;
@@ -112,6 +108,14 @@ typedef struct
    bool      DebugEnabled;
    osal_id_t DebugFileHandle;
    char      DebugFilename[OS_MAX_PATH_LEN];
+   
+   /*
+   ** Messages
+   */
+   
+   BC42_CTRL_ControllerTlm_t     ControllerTlm;
+   BC42_CTRL_ControlGainsTlm_t   ControlGainsTlm;
+   BC42_INTF_ActuatorCmdMsg_t    ActuatorCmdMsg;
    
 } CTRL42_Class_t;
 

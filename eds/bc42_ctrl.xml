@@ -154,8 +154,8 @@
           <Entry name="werr"      type="Vec3D"                  shortDescription="" />
           <Entry name="Hvb"       type="Vec3D"                  shortDescription="" />
           <Entry name="svb"       type="Vec3D"                  shortDescription="" />
-          <Entry name="Tcmd"      type="Vec3D"                  shortDescription="Torque Command" />
-          <Entry name="Mcmd"      type="Vec3D"                  shortDescription="Magentic Command" />
+          <Entry name="Tcmd"      type="Vec3D"                  shortDescription="Wheel Torque Command" />
+          <Entry name="Mcmd"      type="Vec3D"                  shortDescription="Magnetic Torque Bar Command" />
           <Entry name="SaGcmd"    type="BASE_TYPES/double"      shortDescription="" />
           <Entry name="GpsValid"  type="APP_C_FW/BooleanUint8"  shortDescription="" />
           <Entry name="StValid"   type="APP_C_FW/BooleanUint8"  shortDescription="" />

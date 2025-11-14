@@ -41,10 +41,12 @@
 ** 1.0 - Initial Basecamp release created from OpenSatKit and upgraded to the
 **       latest 42 version
 ** 1.1 - Update to Basecamp v1.12's app_c_fw TBLMGR API
+** 2.0 - Updated 42 versions on 9/5/25. 42's standalone AcApp had a design
+**       overhaul that greatly simplifies this app.
 */
 
-#define  BC42_CTRL_MAJOR_VER   1
-#define  BC42_CTRL_MINOR_VER   1
+#define  BC42_CTRL_MAJOR_VER   2
+#define  BC42_CTRL_MINOR_VER   0
 
 
 /******************************************************************************
@@ -63,8 +65,7 @@
 #define CFG_BC42_CTRL_CONTROL_GAINS_TLM_TOPICID BC42_CTRL_CONTROL_GAINS_TLM_TOPICID
 #define CFG_BC42_INTF_SENSOR_DATA_MSG_TOPICID   BC42_INTF_SENSOR_DATA_MSG_TOPICID
 #define CFG_BC42_INTF_ACTUATOR_CMD_MSG_TOPICID  BC42_INTF_ACTUATOR_CMD_MSG_TOPICID
-#define CFG_BC42_CTRL_EXECUTE_TOPICID           BC_SCH_1_HZ_TOPICID                // Use different CFG_ name instead of BC_SCH_*_TOPICID to localize impact if rate changes
-#define CFG_BC42_INTF_SENSOR_DATA_MSG_TIMEOUT   BC42_INTF_SENSOR_DATA_MSG_TIMEOUT  // Pend timeout (ms) for sensor data read
+#define CFG_BC42_SEND_STATUS_TLM_TOPICID        BC_SCH_1_HZ_TOPICID                // Use different CFG_ name instead of BC_SCH_*_TOPICID to localize impact if rate changes
 
 #define CFG_CTRL42_TAKE_SCI_INIT_CYC  CTRL42_TAKE_SCI_INIT_CYC   // Number of control cycles before start computing take science flag
 #define CFG_CTRL42_TAKE_SCI_TRANS_CYC CTRL42_TAKE_SCI_TRANS_CYC  // Number of control cycles for new value to be considered steady state for a transition
@@ -85,7 +86,6 @@
    XX(BC42_INTF_SENSOR_DATA_MSG_TOPICID,uint32) \
    XX(BC42_INTF_ACTUATOR_CMD_MSG_TOPICID,uint32) \
    XX(BC_SCH_1_HZ_TOPICID,uint32) \
-   XX(BC42_INTF_SENSOR_DATA_MSG_TIMEOUT,uint32) \
    XX(CTRL42_TAKE_SCI_INIT_CYC,uint32) \
    XX(CTRL42_TAKE_SCI_TRANS_CYC,uint32) \
    XX(CTRL42_DEBUG_FILE,char*) \

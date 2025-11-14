@@ -82,7 +82,7 @@ typedef struct
 
    uint32          PerfId;
    CFE_SB_MsgId_t  CmdMid;
-   CFE_SB_MsgId_t  ExecuteMid;
+   CFE_SB_MsgId_t  SendStatusTlmMid;
    CFE_SB_MsgId_t  StatusTlmMid;
    CFE_SB_MsgId_t  SensorDataMsgMid;
    

@@ -146,7 +146,6 @@ bool CTRL42_TBL_LoadCmd(APP_C_FW_TblLoadOptions_Enum_t LoadType, const char *Fil
    if (CJSON_ProcessFile(Filename, Ctrl42Tbl->JsonBuf, CTRL42_TBL_JSON_FILE_MAX_CHAR, LoadJsonData))
    {
       Ctrl42Tbl->Loaded = true;
-      if (Ctrl42Tbl->LoadFunc != NULL) (Ctrl42Tbl->LoadFunc)();
       RetStatus = true;   
    }
 
@@ -192,7 +191,7 @@ static bool LoadJsonData(size_t JsonFileLen)
    
    ObjLoadCnt = CJSON_LoadObjArray(JsonTblObjs, Ctrl42Tbl->JsonObjCnt, Ctrl42Tbl->JsonBuf, Ctrl42Tbl->JsonFileLen);
 
-   /* Only accept fixed sized bin arrays */
+   /* Partial table only accepted after a full table load has been performed */
    if (!Ctrl42Tbl->Loaded && (ObjLoadCnt != Ctrl42Tbl->JsonObjCnt))
    {
 
@@ -203,14 +202,21 @@ static bool LoadJsonData(size_t JsonFileLen)
    }
    else
    {
-   
-      memcpy(&Ctrl42Tbl->Data,&TblData, sizeof(CTRL42_TBL_Data_t));
-      Ctrl42Tbl->LastLoadCnt = ObjLoadCnt;
-      CFE_EVS_SendEvent(CTRL42_TBL_LOAD_EID, CFE_EVS_EventType_INFORMATION, 
-                        "Successfully loaded %d JSON objects",
-                        (unsigned int)ObjLoadCnt);
+      // If no validation function assume table is valid
       RetStatus = true;
+      if (Ctrl42Tbl->LoadFunc != NULL)
+      {
+         RetStatus = (Ctrl42Tbl->LoadFunc)(&TblData);
+      }
       
+      if (RetStatus)
+      {
+         memcpy(&Ctrl42Tbl->Data,&TblData, sizeof(CTRL42_TBL_Data_t));
+         Ctrl42Tbl->LastLoadCnt = ObjLoadCnt;
+         CFE_EVS_SendEvent(CTRL42_TBL_LOAD_EID, CFE_EVS_EventType_INFORMATION, 
+                           "Successfully loaded %d JSON objects", 
+                           (unsigned int)ObjLoadCnt);
+      }
    }
    
    return RetStatus;
