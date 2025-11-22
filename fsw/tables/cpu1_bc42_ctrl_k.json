@@ -1,0 +1,17 @@
+{
+   "name": "Attitude Control Parameters",
+   "description": ["Gains used in a demo that intentional cause rotation about Z"],
+   "kp": {
+      "x": 29.4,
+      "y": 22.0,
+      "z": 1.0
+   },
+   "kr": {
+      "x": 51.4,
+      "y": 411.7,
+      "z": -500.0
+   },
+   "kunl": {
+      "k": 1000000.0
+   }
+}

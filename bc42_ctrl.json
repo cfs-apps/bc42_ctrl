@@ -23,7 +23,7 @@
       "load_addr": 0,
       "exception-action": 0,
       "app-framework": "osk",
-      "tables": ["bc42_ctrl_ini.json","bc42_ctrl_prm.json"]
+      "tables": ["bc42_ctrl_ini.json","bc42_ctrl_prm.json","bc42_ctrl_k.json"]
    },
 
    "requires": ["app_c_fw","bc42_lib","bc42_intf"]
