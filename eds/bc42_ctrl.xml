@@ -255,6 +255,12 @@
         </ConstraintSet>
       </ContainerDataType>
 
+      <ContainerDataType name="RestoreDefaultCtrlGains" baseType="CommandBase" shortDescription="">
+        <ConstraintSet>
+          <ValueConstraint entry="Sec.FunctionCode" value="${APP_C_FW/APP_BASE_CC} + 6" />
+        </ConstraintSet>
+      </ContainerDataType>
+
 
       <!--****************************************-->
       <!--**** DataTypeSet: Telemetry Packets ****-->

@@ -49,15 +49,15 @@
 */
 
 
-#define CTRL42_SET_BOOL_OVR_EID         (CTRL42_BASE_EID + 0)
-#define CTRL42_SET_CTRL_MODE_EID        (CTRL42_BASE_EID + 1)
-#define CTRL42_ENA_DEBUG_CMD_EID        (CTRL42_BASE_EID + 2)
-#define CTRL42_DIS_DEBUG_CMD_EID        (CTRL42_BASE_EID + 3)
-#define CTRL42_WHL_TARGET_MOM_CMD_EID   (CTRL42_BASE_EID + 4)
-#define CTRL42_INIT_CONTROLLER_EID      (CTRL42_BASE_EID + 5)
-#define CTRL42_DEBUG_CONTROLLER_EID     (CTRL42_BASE_EID + 6)
-#define CTRL42_ACCEPT_NEW_TBL_EID       (CTRL42_BASE_EID + 7)
-
+#define CTRL42_SET_BOOL_OVR_EID           (CTRL42_BASE_EID + 0)
+#define CTRL42_SET_CTRL_MODE_EID          (CTRL42_BASE_EID + 1)
+#define CTRL42_ENA_DEBUG_CMD_EID          (CTRL42_BASE_EID + 2)
+#define CTRL42_DIS_DEBUG_CMD_EID          (CTRL42_BASE_EID + 3)
+#define CTRL42_WHL_TARGET_MOM_CMD_EID     (CTRL42_BASE_EID + 4)
+#define CTRL42_INIT_CONTROLLER_EID        (CTRL42_BASE_EID + 5)
+#define CTRL42_DEBUG_CONTROLLER_EID       (CTRL42_BASE_EID + 6)
+#define CTRL42_ACCEPT_NEW_TBL_EID         (CTRL42_BASE_EID + 7)
+#define CTRL42_RESTORE_DEFAULT_GAINS_EID  (CTRL42_BASE_EID + 8)
 
 /**********************/
 /** Type Definitions **/
@@ -158,6 +158,15 @@ bool CTRL42_EnableDebugLogCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
 **
 */
 void CTRL42_ResetStatus(void);
+
+
+/******************************************************************************
+** Function: CTRL42_RestoreDefaultCtrlGains
+**
+** Set control gains to the default values computed during 42 initialization
+**
+*/
+bool CTRL42_RestoreDefaultCtrlGainsCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr);
 
 
 /******************************************************************************

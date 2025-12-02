@@ -201,6 +201,7 @@ static int32 InitApp(void)
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_SET_WHEEL_TARGET_MOM_CC, CTRL42_OBJ, CTRL42_SetWheelTargetMomCmd, sizeof(BC42_CTRL_SetWheelTargetMom_CmdPayload_t));
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_ENABLE_DEBUG_LOG_CC,     CTRL42_OBJ, CTRL42_EnableDebugLogCmd,    0);
       CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_DISABLE_DEBUG_LOG_CC,    CTRL42_OBJ, CTRL42_DisableDebugLogCmd,   0);
+      CMDMGR_RegisterFunc(CMDMGR_OBJ, BC42_CTRL_RESTORE_DEFAULT_CTRL_GAINS_CC, CTRL42_OBJ, CTRL42_RestoreDefaultCtrlGainsCmd, 0);
 
       CFE_MSG_Init(CFE_MSG_PTR(Bc42Ctrl.StatusTlm.TelemetryHeader), CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_STATUS_TLM_TOPICID)), sizeof(BC42_CTRL_StatusTlm_t));
       

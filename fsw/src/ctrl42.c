@@ -203,6 +203,25 @@ void CTRL42_ResetStatus(void)
 
 
 /******************************************************************************
+** Function: CTRL42_RestoreDefaultCtrlGainsCmd
+**
+** Set control gains to the default values computed during 42 initialization
+**
+*/
+bool CTRL42_RestoreDefaultCtrlGainsCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr)
+{
+   
+   BC42_RestoreDefaultCtrlGains();
+   
+   CFE_EVS_SendEvent(CTRL42_RESTORE_DEFAULT_GAINS_EID, CFE_EVS_EventType_INFORMATION,
+                     "Restored default control gains computed during 42 initialization");   
+   
+   return true;
+   
+} /* CTRL42_RestoreDefaultCtrlGainsCmd() */
+
+
+/******************************************************************************
 ** Function: CTRL42_Run42Fsw
 **
 ** Run the 42 simulator's FSW control law. 42's Ac structure is used for
@@ -216,14 +235,15 @@ void CTRL42_Run42Fsw(BC42_INTF_SensorDataMsg_t *SensorDataMsg)
    
    CFE_EVS_SendEvent(CTRL42_DEBUG_CONTROLLER_EID, CFE_EVS_EventType_DEBUG,
                      "**** CTRL42_Run42Fsw(%d) ****", (int)Ctrl42->CtrlExeCnt);
-    
+
    if (BC42_RunController(&Ac42))
    {
+      Ctrl42->CtrlExeCnt++;
       SendControllerTlm(Ac42);
-      SendActuatorCmdMsg(Ac42);   
+      SendActuatorCmdMsg(Ac42);
       SetTakeSci();
    }
-   
+
 } /* End CTRL42_Run42Fsw() */
 
 
