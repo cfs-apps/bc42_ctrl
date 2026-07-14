@@ -65,7 +65,7 @@ static CJSON_Obj_t JsonTblObjs[] =
    { &TblData.Kr[0],            sizeof(float),      false,   JSONNumber, true,   { "kr.x",                (sizeof("kr.x")-1)}             },
    { &TblData.Kr[1],            sizeof(float),      false,   JSONNumber, true,   { "kr.y",                (sizeof("kr.y")-1)}             },
    { &TblData.Kr[2],            sizeof(float),      false,   JSONNumber, true,   { "kr.z",                (sizeof("kr.z")-1)}             },
-   { &TblData.Kunl,             sizeof(float),      false,   JSONNumber, true,   { "kunl.k",              (sizeof("kunl.k")-1)}             },
+   { &TblData.Kunl,             sizeof(float),      false,   JSONNumber, true,   { "kunl.k",              (sizeof("kunl.k")-1)}           },
    { &TblData.SciThetaLim[0],   sizeof(float),      false,   JSONNumber, true,   { "sci-theta-lim.x",     (sizeof("sci-theta-lim.x")-1)}  },
    { &TblData.SciThetaLim[1],   sizeof(float),      false,   JSONNumber, true,   { "sci-theta-lim.y",     (sizeof("sci-theta-lim.y")-1)}  },
    { &TblData.SciThetaLim[2],   sizeof(float),      false,   JSONNumber, true,   { "sci-theta-lim.z",     (sizeof("sci-theta-lim.z")-1)}  },
