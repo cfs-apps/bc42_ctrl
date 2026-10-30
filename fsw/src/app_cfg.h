@@ -45,10 +45,11 @@
 **       overhaul that greatly simplifies this app.
 ** 3.0 - Compatible with Basecamp 3.3 and cFS 6.8
 ** 3.1 - Minor updates
+** 4.0 - Updated to cFS 7.0 (Basecamp 4.0 release)
 */
 
-#define  BC42_CTRL_MAJOR_VER   3
-#define  BC42_CTRL_MINOR_VER   1
+#define  BC42_CTRL_MAJOR_VER   4
+#define  BC42_CTRL_MINOR_VER   0
 
 
 /******************************************************************************
@@ -61,13 +62,13 @@
 #define CFG_APP_CMD_PIPE_NAME   APP_CMD_PIPE_NAME
 #define CFG_APP_CMD_PIPE_DEPTH  APP_CMD_PIPE_DEPTH
 
+#define CFG_BC42_CTRL_SEND_STATUS_TLM_TOPICID   BC_SCH_1_SEC_TOPICID  // Use different CFG_ name instead of BC_SCH_*_TOPICID to localize impact if rate changes
 #define CFG_BC42_CTRL_CMD_TOPICID               BC42_CTRL_CMD_TOPICID
 #define CFG_BC42_CTRL_STATUS_TLM_TOPICID        BC42_CTRL_STATUS_TLM_TOPICID
 #define CFG_BC42_CTRL_CONTROLLER_TLM_TOPICID    BC42_CTRL_CONTROLLER_TLM_TOPICID
 #define CFG_BC42_CTRL_CONTROL_GAINS_TLM_TOPICID BC42_CTRL_CONTROL_GAINS_TLM_TOPICID
 #define CFG_BC42_INTF_SENSOR_DATA_MSG_TOPICID   BC42_INTF_SENSOR_DATA_MSG_TOPICID
 #define CFG_BC42_INTF_ACTUATOR_CMD_MSG_TOPICID  BC42_INTF_ACTUATOR_CMD_MSG_TOPICID
-#define CFG_BC42_SEND_STATUS_TLM_TOPICID        BC_SCH_1_HZ_TOPICID                // Use different CFG_ name instead of BC_SCH_*_TOPICID to localize impact if rate changes
 
 #define CFG_CTRL42_TAKE_SCI_INIT_CYC  CTRL42_TAKE_SCI_INIT_CYC   // Number of control cycles before start computing take science flag
 #define CFG_CTRL42_TAKE_SCI_TRANS_CYC CTRL42_TAKE_SCI_TRANS_CYC  // Number of control cycles for new value to be considered steady state for a transition
@@ -81,13 +82,13 @@
    XX(APP_PERF_ID,uint32) \
    XX(APP_CMD_PIPE_NAME,char*) \
    XX(APP_CMD_PIPE_DEPTH,uint32) \
+   XX(BC_SCH_1_SEC_TOPICID,uint32) \
    XX(BC42_CTRL_CMD_TOPICID,uint32) \
    XX(BC42_CTRL_STATUS_TLM_TOPICID,uint32) \
    XX(BC42_CTRL_CONTROLLER_TLM_TOPICID,uint32) \
    XX(BC42_CTRL_CONTROL_GAINS_TLM_TOPICID,uint32) \
    XX(BC42_INTF_SENSOR_DATA_MSG_TOPICID,uint32) \
    XX(BC42_INTF_ACTUATOR_CMD_MSG_TOPICID,uint32) \
-   XX(BC_SCH_1_HZ_TOPICID,uint32) \
    XX(CTRL42_TAKE_SCI_INIT_CYC,uint32) \
    XX(CTRL42_TAKE_SCI_TRANS_CYC,uint32) \
    XX(CTRL42_DEBUG_FILE,char*) \
@@ -106,9 +107,9 @@ DECLARE_ENUM(Config,APP_CONFIG)
 ** exceeded so it is the developer's responsibility to verify the ranges. 
 */
 
-#define BC42_CTRL_BASE_EID   (APP_C_FW_APP_BASE_EID +  0)
-#define CTRL42_BASE_EID      (APP_C_FW_APP_BASE_EID + 20)
-#define CTRL42_TBL_BASE_EID  (APP_C_FW_APP_BASE_EID + 40)
+#define BC42_CTRL_BASE_EID   (EdsParam_APP_C_FW_APP_BASE_EID +  0)
+#define CTRL42_BASE_EID      (EdsParam_APP_C_FW_APP_BASE_EID + 20)
+#define CTRL42_TBL_BASE_EID  (EdsParam_APP_C_FW_APP_BASE_EID + 40)
 
 
 /*
