@@ -61,7 +61,7 @@ static bool AcceptNewTbl(const CTRL42_TBL_Data_t *TblData);
 static void SendActuatorCmdMsg(const BC42_Ac_t *Ac42);
 static void SendControllerTlm(const BC42_Ac_t *Ac42);
 static void SetTakeSci(void);
-static const char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State);
+static const char *BoolOverrideStr(EdsDataType_BC42_CTRL_Bool42State_t State);
 
 
 /******************************************************************************
@@ -89,7 +89,7 @@ void CTRL42_Constructor(CTRL42_Class_t *Ctrl42Obj, const INITBL_Class_t *IniTbl,
    Ctrl42->TakeSciInitCyc  = INITBL_GetIntConfig(IniTbl, CFG_CTRL42_TAKE_SCI_INIT_CYC);
    Ctrl42->TakeSciTransCyc = INITBL_GetIntConfig(IniTbl, CFG_CTRL42_TAKE_SCI_TRANS_CYC);
    
-   for (i=BC42_CTRL_Bool42State_Enum_t_MIN; i<=BC42_CTRL_Bool42State_Enum_t_MAX; i++)
+   for (i=EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MIN; i<=EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MAX; i++)
    {
       Ctrl42->BoolOverride[i] = BC42_CTRL_Bool42State_USE_SIM;
    }
@@ -307,15 +307,15 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
    bool  RetStatus = false;
    int   i;
    
-   for (i=BC42_CTRL_Bool42Id_Enum_t_MIN; i < BC42_CTRL_Bool42State_Enum_t_MAX; i++)
+   for (i=EdsDataType_EdsEnum_BC42_CTRL_Bool42Id_t_MIN; i < EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MAX; i++)
    {
       Ctrl42->BoolOverride[i] = BC42_CTRL_Bool42State_USE_SIM;
    }
 
-   if (CmdPayload->Id <= BC42_CTRL_Bool42Id_Enum_t_MAX)
+   if (CmdPayload->Id <= EdsDataType_EdsEnum_BC42_CTRL_Bool42Id_t_MAX)
    {
      
-      if (CmdPayload->State >= BC42_CTRL_Bool42State_Enum_t_MIN && CmdPayload->State <= BC42_CTRL_Bool42State_Enum_t_MAX)
+      if (CmdPayload->State >= EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MIN && CmdPayload->State <= EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MAX)
       {
          Ctrl42->BoolOverride[CmdPayload->Id] = CmdPayload->State;
          RetStatus = true;
@@ -327,7 +327,7 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
 	  else {
          CFE_EVS_SendEvent(CTRL42_SET_BOOL_OVR_EID, CFE_EVS_EventType_ERROR,
                            "Invalid commanded override state %d. Must be between %d and %d inclusively",\
-                           CmdPayload->State,BC42_CTRL_Bool42State_Enum_t_MIN,BC42_CTRL_Bool42State_Enum_t_MAX);
+                           CmdPayload->State,EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MIN,EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MAX);
 	  } /* End if valid state */
 	  
    } /* End if valid ID */
@@ -336,7 +336,7 @@ bool CTRL42_SetBoolOvrStateCmd(void *ObjDataPtr, const CFE_MSG_Message_t *MsgPtr
    {
       CFE_EVS_SendEvent(CTRL42_SET_BOOL_OVR_EID, CFE_EVS_EventType_ERROR,
                         "Invalid commanded override identifier %d is greater than max ID %d",
-                        CmdPayload->Id, BC42_CTRL_Bool42Id_Enum_t_MAX); 
+                        CmdPayload->Id, EdsDataType_EdsEnum_BC42_CTRL_Bool42Id_t_MAX); 
    }
 
    return RetStatus;
@@ -456,7 +456,7 @@ static bool AcceptNewTbl(const CTRL42_TBL_Data_t *TblData)
 ** TODO: Decide whether to define strings in EDS.
 **
 */
-static const char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State)
+static const char *BoolOverrideStr(EdsDataType_BC42_CTRL_Bool42State_t State)
 {
 
    const static char *OverrideStr[BC42_CTRL_Bool42State_COUNT+1] = 
@@ -464,7 +464,7 @@ static const char *BoolOverrideStr(BC42_CTRL_Bool42State_Enum_t State)
       "USE 42 SIM", "TRUE", "FALSE", "UNDEFINED"
    };
    
-   if (State >= BC42_CTRL_Bool42State_Enum_t_MIN && State <= BC42_CTRL_Bool42State_Enum_t_MAX)
+   if (State >= EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MIN && State <= EdsDataType_EdsEnum_BC42_CTRL_Bool42State_t_MAX)
 
       return OverrideStr[State];
  

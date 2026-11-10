@@ -170,7 +170,7 @@ static int32 InitApp(void)
 
       Bc42Ctrl.CmdMid            = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_CMD_TOPICID));
       Bc42Ctrl.StatusTlmMid      = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_STATUS_TLM_TOPICID));
-      Bc42Ctrl.SendStatusTlmMid  = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_SEND_STATUS_TLM_TOPICID));
+      Bc42Ctrl.SendStatusTlmMid  = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_CTRL_SEND_STATUS_TLM_TOPICID));
       Bc42Ctrl.SensorDataMsgMid  = CFE_SB_ValueToMsgId(INITBL_GetIntConfig(INITBL_OBJ, CFG_BC42_INTF_SENSOR_DATA_MSG_TOPICID));
 
       /* Must constructor table manager prior to any app objects that contain tables */
